@@ -1,0 +1,923 @@
+@page "/payments/edit/{Id:int}"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject PaymentService PaymentService
+@inject StudentService StudentService
+@inject NavigationManager Navigation
+@inject AuthStateProvider AuthStateProvider
+
+<PageTitle>Edit Payment - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .form-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+        .form-card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0;
+        }
+
+    .form-card-body {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+    }
+
+    .form-input, .form-select, .form-textarea {
+        padding: 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+        transition: all 0.2s;
+    }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-start;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .submit-button, .cancel-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .submit-button {
+        background: #000;
+        color: white;
+        border-color: #000;
+    }
+
+        .submit-button:hover:not(:disabled) {
+            background: #404040;
+            border-color: #404040;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .cancel-button {
+        background: white;
+        color: #404040;
+        border-color: #e5e5e5;
+    }
+
+        .cancel-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .error-message {
+        padding: 0.75rem 1rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .not-found-message {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+    }
+
+    .not-found-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        color: #dc2626;
+        margin-top: 0.25rem;
+    }
+
+    .amount-input-container {
+        position: relative;
+    }
+
+    .amount-input {
+        padding-left: 2.5rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+    }
+
+    .currency-symbol {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.875rem;
+        color: #737373;
+        font-weight: 500;
+        pointer-events: none;
+    }
+
+    .payment-method-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .payment-method-option {
+        padding: 0.75rem 0.5rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+
+        .payment-method-option:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .payment-method-option.selected {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+    .status-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .status-option {
+        padding: 0.75rem 0.5rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+
+        .status-option:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .status-option.selected.paid {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .status-option.selected.pending {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+
+        .status-option.selected.failed {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        .status-option.selected.refunded {
+            background: #f3e8ff;
+            color: #7e22ce;
+            border-color: #e9d5ff;
+        }
+
+    .student-info {
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #000;
+    }
+
+    .student-details {
+        font-size: 0.75rem;
+        color: #737373;
+        margin-top: 0.25rem;
+    }
+
+    .payment-details {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e5e5e5;
+        margin-bottom: 1.5rem;
+    }
+
+    .payment-details-title {
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.5rem;
+    }
+
+    .payment-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .payment-detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .payment-detail-label {
+        font-size: 0.75rem;
+        color: #737373;
+        font-weight: 500;
+    }
+
+    .payment-detail-value {
+        color: #000;
+        font-weight: 500;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/admin-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/subjects" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/audit-logs" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </NavLink>
+                </li>
+                
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">Admin</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Edit Payment</h1>
+            <p>Update payment information and transaction details</p>
+        </div>
+
+        <div class="form-container">
+            @if (loading)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                </div>
+            }
+            else if (payment == null)
+            {
+                <div class="not-found-message">
+                    <div class="not-found-icon">💰</div>
+                    <h3>Payment Not Found</h3>
+                    <p>The payment you're looking for doesn't exist or has been removed.</p>
+                    <a href="/payments" class="cancel-button" style="margin-top: 1rem;">
+                        Back to Payments
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <h2>Payment Information</h2>
+                    </div>
+                    <div class="form-card-body">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="error-message">
+                                <strong>Error:</strong> @errorMessage
+                            </div>
+                        }
+
+                        <!-- Payment Details Summary -->
+                        <div class="payment-details">
+                            <div class="payment-details-title">Current Payment Details</div>
+                            <div class="payment-details-grid">
+                                <div class="payment-detail-item">
+                                    <span class="payment-detail-label">Payment ID</span>
+                                    <span class="payment-detail-value">#@payment.PaymentId</span>
+                                </div>
+                                <div class="payment-detail-item">
+                                    <span class="payment-detail-label">Student</span>
+                                    <span class="payment-detail-value">
+                                        @if (payment.Student != null)
+                                        {
+                                            @payment.Student.FirstName@payment.Student.LastName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Unknown</span>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="payment-detail-item">
+                                    <span class="payment-detail-label">Current Amount</span>
+                                    <span class="payment-detail-value">₱@payment.Amount.ToString("N2")</span>
+                                </div>
+                                <div class="payment-detail-item">
+                                    <span class="payment-detail-label">Current Status</span>
+                                    <span class="payment-detail-value">
+                                        <span class="status-badge @GetStatusClass(payment.PaymentStatus)">@payment.PaymentStatus</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <EditForm Model="@payment" OnValidSubmit="@HandleSubmit">
+                            <DataAnnotationsValidator />
+
+                            <div class="form-grid">
+                                <div class="form-group full-width">
+                                    <label class="form-label">Student *</label>
+                                    <InputSelect class="form-select" @bind-Value="payment.StudentId">
+                                        <option value="">-- Select a student --</option>
+                                        @foreach (var student in students)
+                                        {
+                                            <option value="@student.StudentId" selected="@(payment.StudentId == student.StudentId)">
+                                                @student.FirstName @student.LastName - @student.Email
+                                            </option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => payment.StudentId)" class="validation-message" />
+
+                                    @{
+                                        var selectedStudent = students.FirstOrDefault(s => s.StudentId == payment.StudentId);
+                                        if (selectedStudent != null)
+                                        {
+                                            <div class="student-info">
+                                                <div class="student-name">@selectedStudent.FirstName @selectedStudent.LastName</div>
+                                                <div class="student-details">
+                                                    Email: @selectedStudent.Email |
+                                                    Status: <span class="badge bg-@GetStudentStatusColor(selectedStudent.EnrollmentStatus)">@selectedStudent.EnrollmentStatus</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Amount (₱) *</label>
+                                    <div class="amount-input-container">
+                                        <InputNumber class="form-input amount-input" @bind-Value="payment.Amount" step="0.01" placeholder="0.00" />
+                                        <span class="currency-symbol">₱</span>
+                                    </div>
+                                    <ValidationMessage For="@(() => payment.Amount)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Payment Date *</label>
+                                    <InputDate class="form-input" @bind-Value="payment.PaymentDate" />
+                                    <ValidationMessage For="@(() => payment.PaymentDate)" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Payment Method *</label>
+                                    <InputSelect class="form-select" @bind-Value="payment.PaymentMethod">
+                                        <option value="">-- Select payment method --</option>
+                                        <option value="Cash" selected="@(payment.PaymentMethod == "Cash")">Cash</option>
+                                        <option value="Credit Card" selected="@(payment.PaymentMethod == "Credit Card")">Credit Card</option>
+                                        <option value="Debit Card" selected="@(payment.PaymentMethod == "Debit Card")">Debit Card</option>
+                                        <option value="Bank Transfer" selected="@(payment.PaymentMethod == "Bank Transfer")">Bank Transfer</option>
+                                        <option value="GCash" selected="@(payment.PaymentMethod == "GCash")">GCash</option>
+                                        <option value="PayMaya" selected="@(payment.PaymentMethod == "PayMaya")">PayMaya</option>
+                                        <option value="Check" selected="@(payment.PaymentMethod == "Check")">Check</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => payment.PaymentMethod)" class="validation-message" />
+
+                                    <div class="payment-method-options">
+                                        <div class="payment-method-option @(payment.PaymentMethod == "Cash" ? "selected" : "")" @onclick='() => SetPaymentMethod("Cash")'>Cash</div>
+                                        <div class="payment-method-option @(payment.PaymentMethod == "GCash" ? "selected" : "")" @onclick='() => SetPaymentMethod("GCash")'>GCash</div>
+                                        <div class="payment-method-option @(payment.PaymentMethod == "Bank Transfer" ? "selected" : "")" @onclick='() => SetPaymentMethod("Bank Transfer")'>Bank Transfer</div>
+                                        <div class="payment-method-option @(payment.PaymentMethod == "Credit Card" ? "selected" : "")" @onclick='() => SetPaymentMethod("Credit Card")'>Credit Card</div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Payment Status *</label>
+                                    <InputSelect class="form-select" @bind-Value="payment.PaymentStatus">
+                                        <option value="">-- Select status --</option>
+                                        <option value="Paid" selected="@(payment.PaymentStatus == "Paid")">Paid</option>
+                                        <option value="Pending" selected="@(payment.PaymentStatus == "Pending")">Pending</option>
+                                        <option value="Failed" selected="@(payment.PaymentStatus == "Failed")">Failed</option>
+                                        <option value="Refunded" selected="@(payment.PaymentStatus == "Refunded")">Refunded</option>
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => payment.PaymentStatus)" class="validation-message" />
+                                    <div class="status-options">
+                                        <div class="status-option @(payment.PaymentStatus == "Paid" ? "selected paid" : "")" @onclick='() => SetPaymentStatus("Paid")'>Paid</div>
+                                        <div class="status-option @(payment.PaymentStatus == "Pending" ? "selected pending" : "")" @onclick='() => SetPaymentStatus("Pending")'>Pending</div>
+                                        <div class="status-option @(payment.PaymentStatus == "Failed" ? "selected failed" : "")" @onclick='() => SetPaymentStatus("Failed")'>Failed</div>
+                                        <div class="status-option @(payment.PaymentStatus == "Refunded" ? "selected refunded" : "")" @onclick='() => SetPaymentStatus("Refunded")'>Refunded</div>
+                                    </div>
+                                </div>
+
+                                
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="submit-button" disabled="@saving">
+                                    @if (saving)
+                                    {
+                                        <div class="spinner-small"></div>
+                                    }
+                                    else
+                                    {
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                            <polyline points="7 3 7 8 15 8"></polyline>
+                                        </svg>
+                                    }
+                                    <span>Update Payment</span>
+                                </button>
+                                <a href="/payments" class="cancel-button">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                    <span>Cancel</span>
+                                </a>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Payment? payment;
+    private List<Student> students = new();
+    private string? errorMessage;
+    private bool loading = true;
+    private bool saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = await StudentService.GetAllStudentsAsync();
+        payment = await PaymentService.GetPaymentByIdAsync(Id);
+        loading = false;
+    }
+
+    private void SetPaymentMethod(string method)
+    {
+        if (payment != null)
+        {
+            payment.PaymentMethod = method;
+            StateHasChanged();
+        }
+    }
+
+    private void SetPaymentStatus(string status)
+    {
+        if (payment != null)
+        {
+            payment.PaymentStatus = status;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStudentStatusColor(string? status)
+    {
+        return status?.ToLower() switch
+        {
+            "active" => "success",
+            "inactive" => "secondary",
+            "graduated" => "info",
+            _ => "warning"
+        };
+    }
+
+    private string GetStatusClass(string? status)
+    {
+        return status?.ToLower() switch
+        {
+            "paid" => "paid",
+            "pending" => "pending",
+            "failed" => "failed",
+            "refunded" => "refunded",
+            _ => "pending"
+        };
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (payment == null) return;
+
+        saving = true;
+        errorMessage = null;
+
+        try
+        {
+            var currentUserId = AuthStateProvider.GetCurrentUserId();
+            await PaymentService.UpdatePaymentAsync(payment, currentUserId);
+            Navigation.NavigateTo("/payments");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+}

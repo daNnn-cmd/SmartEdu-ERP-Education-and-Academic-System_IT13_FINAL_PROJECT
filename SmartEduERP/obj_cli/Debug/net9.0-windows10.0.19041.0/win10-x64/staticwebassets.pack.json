@@ -1,0 +1,49 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\Dandy\\.nuget\\packages\\chartjs.blazor.fork\\2.0.2\\contentFiles\\any\\netstandard2.1\\wwwroot\\ChartJsBlazorInterop.js",
+      "PackagePath": "staticwebassets\\ChartJsBlazorInterop.js"
+    },
+    {
+      "Id": "C:\\Users\\Dandy\\source\\repos\\SmartEduERP\\SmartEduERP - Copy 2\\SmartEduERP\\wwwroot\\app.css",
+      "PackagePath": "staticwebassets\\app.css"
+    },
+    {
+      "Id": "C:\\Users\\Dandy\\source\\repos\\SmartEduERP\\SmartEduERP - Copy 2\\SmartEduERP\\wwwroot\\images\\bg.jpg",
+      "PackagePath": "staticwebassets\\images\\bg.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Dandy\\source\\repos\\SmartEduERP\\SmartEduERP - Copy 2\\SmartEduERP\\wwwroot\\images\\logo.png",
+      "PackagePath": "staticwebassets\\images\\logo.png"
+    },
+    {
+      "Id": "C:\\Users\\Dandy\\source\\repos\\SmartEduERP\\SmartEduERP - Copy 2\\SmartEduERP\\wwwroot\\images\\rg.jpg",
+      "PackagePath": "staticwebassets\\images\\rg.jpg"
+    },
+    {
+      "Id": "C:\\Users\\Dandy\\source\\repos\\SmartEduERP\\SmartEduERP - Copy 2\\SmartEduERP\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj_cli\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.SmartEduERP.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj_cli\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.SmartEduERP.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj_cli\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.build.SmartEduERP.props",
+      "PackagePath": "build\\SmartEduERP.props"
+    },
+    {
+      "Id": "obj_cli\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.buildMultiTargeting.SmartEduERP.props",
+      "PackagePath": "buildMultiTargeting\\SmartEduERP.props"
+    },
+    {
+      "Id": "obj_cli\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.buildTransitive.SmartEduERP.props",
+      "PackagePath": "buildTransitive\\SmartEduERP.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

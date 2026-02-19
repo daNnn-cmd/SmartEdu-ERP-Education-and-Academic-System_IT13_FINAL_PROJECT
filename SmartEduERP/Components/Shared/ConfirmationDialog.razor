@@ -1,0 +1,279 @@
+@if (IsVisible)
+{
+    <div class="confirmation-overlay" @onclick="OnBackdropClick">
+        <div class="confirmation-dialog" @onclick:stopPropagation="true">
+            <div class="confirmation-header">
+                @if (Type != ConfirmationType.Logout)
+                {
+                    <div class="confirmation-icon @IconClass">
+                        @if (Type == ConfirmationType.Delete)
+                        {
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        }
+                    </div>
+                }
+                <h3 class="confirmation-title">@Title</h3>
+                <p class="confirmation-message">@Message</p>
+            </div>
+            @if (ShowTextInput)
+            {
+                <div class="confirmation-input">
+                    @if (!string.IsNullOrWhiteSpace(InputLabel))
+                    {
+                        <label class="confirmation-input-label">@InputLabel</label>
+                    }
+                    <textarea class="confirmation-textarea"
+                              placeholder="@InputPlaceholder"
+                              value="@InputText"
+                              @oninput="OnTextChanged"
+                              rows="4"
+                              maxlength="@InputMaxLength"
+                              disabled="@IsProcessing"></textarea>
+                    @if (IsInputRequired && string.IsNullOrWhiteSpace(InputText))
+                    {
+                        <div class="validation-error">This field is required.</div>
+                    }
+                </div>
+            }
+            
+            <div class="confirmation-actions">
+                <button type="button" class="btn btn-secondary" @onclick="OnCancel" disabled="@IsProcessing">
+                    Cancel
+                </button>
+                <button type="button" class="btn @ConfirmButtonClass" @onclick="OnConfirm" disabled="@(IsProcessing || (ShowTextInput && IsInputRequired && string.IsNullOrWhiteSpace(InputText)))">
+                    @if (IsProcessing)
+                    {
+                        <span class="spinner-small"></span>
+                        <span>@ProcessingText</span>
+                    }
+                    else
+                    {
+                        <span>@ConfirmText</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .confirmation-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 1rem;
+    }
+
+    .confirmation-dialog {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        max-width: 400px;
+        width: 100%;
+        padding: 2rem;
+        animation: slideIn 0.2s ease-out;
+    }
+
+    .confirmation-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .confirmation-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+    }
+
+    .confirmation-icon.delete {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .confirmation-icon.logout {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .confirmation-icon.warning {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .confirmation-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .confirmation-message {
+        font-size: 0.9375rem;
+        color: #737373;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .confirmation-input {
+        margin: 1rem 0 1.5rem 0;
+    }
+
+    .confirmation-input-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #404040;
+        margin-bottom: 0.5rem;
+    }
+
+    .confirmation-textarea {
+        width: 100%;
+        min-height: 100px;
+        resize: vertical;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        color: #111827;
+        outline: none;
+    }
+
+    .confirmation-textarea:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .validation-error {
+        margin-top: 0.375rem;
+        color: #dc2626;
+        font-size: 0.75rem;
+    }
+
+    .confirmation-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .confirmation-actions .btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .confirmation-actions .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.9) translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Message { get; set; } = "";
+    [Parameter] public string ConfirmText { get; set; } = "Confirm";
+    [Parameter] public string ProcessingText { get; set; } = "Processing...";
+    [Parameter] public ConfirmationType Type { get; set; } = ConfirmationType.Warning;
+    [Parameter] public bool IsProcessing { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; } = default!;
+    [Parameter] public EventCallback OnCancel { get; set; } = default!;
+
+    private string IconClass => Type.ToString().ToLower();
+
+    // Optional text input support (e.g., archive reason)
+    [Parameter] public bool ShowTextInput { get; set; }
+    [Parameter] public string InputLabel { get; set; } = string.Empty;
+    [Parameter] public string InputPlaceholder { get; set; } = string.Empty;
+    [Parameter] public bool IsInputRequired { get; set; } = false;
+    [Parameter] public int InputMaxLength { get; set; } = 500;
+    [Parameter] public string InputText { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> InputTextChanged { get; set; }
+
+    private async Task OnTextChanged(ChangeEventArgs e)
+    {
+        InputText = e?.Value?.ToString() ?? string.Empty;
+        if (InputTextChanged.HasDelegate)
+        {
+            await InputTextChanged.InvokeAsync(InputText);
+        }
+    }
+
+    private async Task OnBackdropClick()
+    {
+        if (!IsProcessing)
+        {
+            await OnCancel.InvokeAsync();
+        }
+    }
+
+    private string ConfirmButtonClass => Type switch
+    {
+        ConfirmationType.Delete => "btn-danger",
+        ConfirmationType.Logout => "btn-danger",
+        ConfirmationType.Warning => "btn-warning",
+        _ => "btn-primary"
+    };
+
+    public enum ConfirmationType
+    {
+        Delete,
+        Logout,
+        Warning
+    }
+}

@@ -1,0 +1,199 @@
+@page "/confirm-email"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@using SmartEduERP.Services
+@using System.Web
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Email Confirmation - Academic System</PageTitle>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .confirmation-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f5f5;
+        padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .confirmation-card {
+        width: 100%;
+        max-width: 560px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e8e8e8;
+        padding: 3.5rem 3rem 3rem;
+        text-align: center;
+    }
+
+    .confirmation-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .confirmation-logo {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 2rem;
+        display: block;
+    }
+
+    .confirmation-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.02em;
+    }
+
+    .confirmation-subtitle {
+        font-size: 0.9375rem;
+        color: #737373;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+
+    .success-message {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #16a34a;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        margin-bottom: 2rem;
+    }
+
+    .error-message {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        margin-bottom: 2rem;
+    }
+
+    .btn-login {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: #000;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 1rem;
+        font-family: inherit;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+        .btn-login:hover {
+            background: #1a1a1a;
+        }
+
+        .btn-login:active {
+            transform: translateY(1px);
+        }
+
+    .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: #737373;
+    }
+
+    .spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e0e0e0;
+        border-top: 2px solid #000;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="confirmation-page">
+    <div class="confirmation-card">
+        <div class="confirmation-header">
+            <img src="/images/logo.png" alt="Academic System Logo" class="confirmation-logo" />
+            <h1 class="confirmation-title">Email Confirmation</h1>
+            <p class="confirmation-subtitle">Verifying your email address</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="loading">
+                <div class="spinner"></div>
+                <span>Confirming your email...</span>
+            </div>
+        }
+        else if (isConfirmed)
+        {
+            <div class="success-message">
+                <h3>✅ Email Confirmed Successfully!</h3>
+                <p>Your email has been verified and your student account is now active. You can now log in to access your dashboard.</p>
+            </div>
+            <a href="/login" class="btn-login">Go to Login</a>
+        }
+        else
+        {
+            <div class="error-message">
+                <h3>❌ Email Confirmation Failed</h3>
+                <p>@errorMessage</p>
+            </div>
+            <a href="/register" class="btn-login">Register Again</a>
+        }
+    </div>
+</div>
+
+@code {
+    private bool isLoading = true;
+    private bool isConfirmed = false;
+    private string errorMessage = "Invalid or expired confirmation token.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        
+        var token = query["token"];
+        if (!string.IsNullOrEmpty(token))
+        {
+            try
+            {
+                isConfirmed = await AuthService.ConfirmEmailAsync(token);
+                if (!isConfirmed)
+                {
+                    errorMessage = "Invalid or expired confirmation token. Please register again.";
+                }
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"An error occurred while confirming your email: {ex.Message}";
+            }
+        }
+        else
+        {
+            errorMessage = "No confirmation token provided.";
+        }
+
+        isLoading = false;
+    }
+}

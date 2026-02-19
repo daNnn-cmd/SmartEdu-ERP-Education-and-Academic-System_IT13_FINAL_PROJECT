@@ -1,0 +1,788 @@
+﻿@page "/hr/employees"
+@using System.Linq
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using SmartEduERP.Components.Pages.Hr
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,HR")]
+@inject HrService HrService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IToastService ToastService
+
+<PageTitle>HR Employees - SmartEduERP</PageTitle>
+
+<style>
+    .hr-page {
+        padding: 1.5rem;
+    }
+
+    .hr-title {
+        font-size: 1.6rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .hr-subtitle {
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin-bottom: 1.25rem;
+    }
+
+    .hr-card {
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .hr-grid-2 {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1rem;
+    }
+
+    .hr-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .hr-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #4b5563;
+        margin-bottom: 0.2rem;
+    }
+
+    .hr-input, .hr-textarea, .hr-select {
+        width: 100%;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.85rem;
+    }
+
+    .hr-textarea {
+        min-height: 80px;
+    }
+
+    .hr-btn-primary {
+        border-radius: 8px;
+        border: none;
+        padding: 0.45rem 0.9rem;
+        background: #2563eb;
+        color: #fff;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .hr-btn-small {
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        padding: 0.2rem 0.65rem;
+        background: #fff;
+        font-size: 0.75rem;
+        cursor: pointer;
+    }
+
+    .hr-btn-danger {
+        border-radius: 8px;
+        border: none;
+        padding: 0.45rem 0.9rem;
+        background: #dc2626;
+        color: #fff;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .hr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .hr-table th {
+            text-align: left;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e5e5e5;
+            font-weight: 500;
+            color: #6b7280;
+            background: #f9fafb;
+        }
+
+        .hr-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+    .hr-table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .hr-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .hr-pagination-button {
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        padding: 0.35rem 0.7rem;
+        background: #fff;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+        .hr-pagination-button.active {
+            background: #111827;
+            color: #fff;
+            border-color: #111827;
+        }
+
+        .hr-pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .hr-pagination-info {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin: 0 0.75rem;
+    }
+
+    .hr-page-size-select {
+        width: auto;
+        min-width: 120px;
+    }
+
+    .hr-badge {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .hr-badge-active {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .hr-badge-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .hr-badge-leave {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .hr-badge-terminated {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .hr-action-buttons {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .hr-form-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .hr-form-cancel {
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 0.45rem 0.9rem;
+        background: #fff;
+        color: #374151;
+        font-size: 0.85rem;
+        cursor: pointer;
+    }
+
+    .hr-validation-error {
+        font-size: 0.75rem;
+        color: #dc2626;
+        margin-top: 0.1rem;
+    }
+
+    .hr-loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+    }
+
+    .hr-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f4f6;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: hr-spin 0.8s linear infinite;
+    }
+
+    .hr-empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .hr-filters {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto auto;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .hr-search-input {
+        width: 100%;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        padding: 0.45rem 0.6rem;
+        font-size: 0.85rem;
+    }
+
+    .hr-results-count {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.75rem;
+    }
+
+    @@keyframes hr-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .hr-grid-2, .hr-grid-3 {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .hr-filters {
+            grid-template-columns: 1fr auto;
+        }
+
+        .hr-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<HrLayout>
+    <div class="hr-page">
+        <div class="hr-title">HR Employees</div>
+        <div class="hr-subtitle">Manage employee records, employment status, and document references</div>
+
+        <div class="hr-card">
+            <div style="font-weight:600; margin-bottom:0.5rem;">
+                @(editingEmployee.EmployeeId == 0 ? "Add New Employee" : "Edit Employee")
+            </div>
+
+            @if (!string.IsNullOrEmpty(employeeErrorMessage))
+            {
+                <div style="font-size:0.8rem;color:#b91c1c;margin-bottom:0.5rem;">@employeeErrorMessage</div>
+            }
+
+            <EditForm Model="editingEmployee" OnValidSubmit="SaveEmployeeAsync">
+                <DataAnnotationsValidator />
+                <div class="hr-grid-3">
+                    <div>
+                        <div class="hr-label">First Name *</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.FirstName" />
+                        <ValidationMessage For="@(() => editingEmployee.FirstName)" class="hr-validation-error" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Last Name *</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.LastName" />
+                        <ValidationMessage For="@(() => editingEmployee.LastName)" class="hr-validation-error" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Middle Name</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.MiddleName" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Email *</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.Email" />
+                        <ValidationMessage For="@(() => editingEmployee.Email)" class="hr-validation-error" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Phone Number</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.PhoneNumber" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Department</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.Department" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Position</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.Position" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Hire Date</div>
+                        <InputDate DateTimeFormat="yyyy-MM-dd" class="hr-input" @bind-Value="editingEmployee.HireDate" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Date of Birth</div>
+                        <InputDate DateTimeFormat="yyyy-MM-dd" class="hr-input" @bind-Value="editingEmployee.DateOfBirth" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Employment Status</div>
+                        <select class="hr-select" @bind="editingEmployee.EmploymentStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="On Leave">On Leave</option>
+                            <option value="Terminated">Terminated</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="hr-label">Address</div>
+                        <textarea class="hr-textarea" @bind="editingEmployee.Address"></textarea>
+                    </div>
+                    <div>
+                        <div class="hr-label">Resume Path</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.ResumePath" />
+                    </div>
+                    <div>
+                        <div class="hr-label">Contract Path</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.ContractPath" />
+                    </div>
+                    <div>
+                        <div class="hr-label">ID Document Path</div>
+                        <InputText class="hr-input" @bind-Value="editingEmployee.IdDocumentPath" />
+                    </div>
+                </div>
+
+                <div class="hr-form-actions">
+                    <button type="submit" class="hr-btn-primary">Save Employee</button>
+                    @if (editingEmployee.EmployeeId != 0)
+                    {
+                        <button type="button" class="hr-form-cancel" @onclick="CancelEdit">Cancel</button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+
+        <div class="hr-card">
+            <div class="hr-table-toolbar">
+                <div style="font-weight:600;">Employees (@totalRecords)</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.8rem;color:#6b7280;">Rows per page:</span>
+                    <select class="hr-input hr-page-size-select" @bind="pageSize" @bind:after="OnPageSizeChanged">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="hr-filters">
+                <input type="text" class="hr-search-input" placeholder="Search employees..."
+                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleSearch" />
+
+                <select class="hr-select" @bind="statusFilter" @bind:after="ApplyFilters">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Terminated">Terminated</option>
+                </select>
+
+                <button class="hr-btn-primary" @onclick="ApplyFilters">Search</button>
+
+                <button class="hr-form-cancel" @onclick="ClearFilters">Clear</button>
+            </div>
+
+            @if (loading)
+            {
+                <div class="hr-loading">
+                    <div class="hr-spinner"></div>
+                </div>
+            }
+            else if (filteredEmployees.Any())
+            {
+                <div class="hr-results-count">
+                    Showing @filteredEmployees.Count of @totalRecords employees
+                </div>
+
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th @onclick='() => SortBy("FirstName")'>
+                                Name @GetSortIcon("FirstName")
+                            </th>
+                            <th @onclick='() => SortBy("Department")'>
+                                Department @GetSortIcon("Department")
+                            </th>
+                            <th>Position</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th @onclick='() => SortBy("EmploymentStatus")'>
+                                Status @GetSortIcon("EmploymentStatus")
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in filteredEmployees)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>
+                                        @employee.FirstName
+                                        @(string.IsNullOrEmpty(employee.MiddleName) ? "" : employee.MiddleName + " ")
+                                        @employee.LastName
+                                    </strong>
+                                </td>
+                                <td>@(employee.Department ?? "-")</td>
+                                <td>@(employee.Position ?? "-")</td>
+                                <td>@employee.Email</td>
+                                <td>@(employee.PhoneNumber ?? "-")</td>
+                                <td>
+                                    <span class="hr-badge @GetStatusBadgeClass(employee.EmploymentStatus)">
+                                        @employee.EmploymentStatus
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="hr-action-buttons">
+                                        <button class="hr-btn-small" @onclick="() => EditEmployee(employee)">Edit</button>
+                                        <button class="hr-btn-small"
+                                                @onclick='() => ArchiveEmployee(employee.EmployeeId, $"{employee.FirstName} {employee.LastName}")'>
+                                            Archive
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (totalPages > 1)
+                {
+                    <div class="hr-pagination">
+                        <button class="hr-pagination-button" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage == 1)">
+                            Previous
+                        </button>
+
+                        <span class="hr-pagination-info">
+                            Page @currentPage of @totalPages
+                        </span>
+
+                        @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                        {
+                            var pageNum = i;
+                            <button class="hr-pagination-button @(currentPage == pageNum ? "active" : "")" @onclick="() => ChangePage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+
+                        <button class="hr-pagination-button" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage == totalPages)">
+                            Next
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="hr-empty-state">
+                    @if (string.IsNullOrEmpty(searchTerm) && string.IsNullOrEmpty(statusFilter))
+                    {
+                        <div>No employees have been added yet. Add a new employee to get started.</div>
+                    }
+                    else
+                    {
+                        <div>No employees match your search criteria. Try adjusting your filters.</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</HrLayout>
+
+@code {
+    private List<Employee> allEmployees = new();
+    private List<Employee> filteredEmployees = new();
+    private Employee editingEmployee = new();
+
+    private string searchTerm = "";
+    private string statusFilter = "";
+    private string sortColumn = "FirstName";
+    private bool sortAscending = true;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalRecords = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalRecords / pageSize);
+
+    private bool loading = true;
+    private string? employeeErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+        editingEmployee.HireDate = DateTime.UtcNow;
+        editingEmployee.EmploymentStatus = "Active";
+    }
+
+    private async Task LoadEmployees()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            allEmployees = await HrService.GetEmployeesAsync();
+            ApplyFiltersAndSort();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading employees: {ex.Message}");
+            allEmployees = new List<Employee>();
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveEmployeeAsync()
+    {
+        employeeErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(editingEmployee.FirstName))
+        {
+            employeeErrorMessage = "First name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingEmployee.LastName))
+        {
+            employeeErrorMessage = "Last name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingEmployee.Email))
+        {
+            employeeErrorMessage = "Email is required.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(editingEmployee.Email) && !editingEmployee.Email.Contains("@"))
+        {
+            employeeErrorMessage = "Please enter a valid email address.";
+            return;
+        }
+
+        try
+        {
+            await HrService.SaveEmployeeAsync(editingEmployee);
+
+            if (ToastService != null)
+            {
+                ToastService.ShowSuccess($"Employee {(editingEmployee.EmployeeId == 0 ? "added" : "updated")} successfully!");
+            }
+
+            CancelEdit();
+            await LoadEmployees();
+        }
+        catch (Exception ex)
+        {
+            employeeErrorMessage = $"Error saving employee: {ex.Message}";
+            if (ToastService != null)
+            {
+                ToastService.ShowError($"Error saving employee: {ex.Message}");
+            }
+        }
+    }
+
+    private void EditEmployee(Employee employee)
+    {
+        editingEmployee = new Employee
+        {
+            EmployeeId = employee.EmployeeId,
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            MiddleName = employee.MiddleName,
+            Email = employee.Email,
+            PhoneNumber = employee.PhoneNumber,
+            Department = employee.Department,
+            Position = employee.Position,
+            HireDate = employee.HireDate,
+            DateOfBirth = employee.DateOfBirth,
+            Address = employee.Address,
+            EmploymentStatus = employee.EmploymentStatus,
+            ResumePath = employee.ResumePath,
+            ContractPath = employee.ContractPath,
+            IdDocumentPath = employee.IdDocumentPath,
+            CreatedAt = employee.CreatedAt,
+            UpdatedAt = employee.UpdatedAt,
+            IsDeleted = employee.IsDeleted
+        };
+    }
+
+    private void CancelEdit()
+    {
+        editingEmployee = new Employee
+        {
+            HireDate = DateTime.UtcNow,
+            EmploymentStatus = "Active"
+        };
+    }
+
+    private async Task ArchiveEmployee(int employeeId, string employeeName)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to archive {employeeName}?"))
+        {
+            try
+            {
+                await HrService.SoftDeleteEmployeeAsync(employeeId);
+
+                if (ToastService != null)
+                {
+                    ToastService.ShowSuccess($"Employee {employeeName} archived successfully!");
+                }
+
+                await LoadEmployees();
+            }
+            catch (Exception ex)
+            {
+                employeeErrorMessage = $"Error archiving employee: {ex.Message}";
+                if (ToastService != null)
+                {
+                    ToastService.ShowError($"Error archiving employee: {ex.Message}");
+                }
+            }
+        }
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        var query = allEmployees.AsEnumerable();
+
+        // Apply search
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lower = searchTerm.ToLower();
+            query = query.Where(e =>
+                (e.FirstName?.ToLower().Contains(lower) ?? false) ||
+                (e.LastName?.ToLower().Contains(lower) ?? false) ||
+                (e.Email?.ToLower().Contains(lower) ?? false) ||
+                (e.Department?.ToLower().Contains(lower) ?? false) ||
+                (e.Position?.ToLower().Contains(lower) ?? false));
+        }
+
+        // Apply status filter
+        if (!string.IsNullOrEmpty(statusFilter))
+        {
+            query = query.Where(e => e.EmploymentStatus == statusFilter);
+        }
+
+        totalRecords = query.Count();
+
+        // Apply sorting
+        query = sortColumn switch
+        {
+            "FirstName" => sortAscending
+                ? query.OrderBy(e => e.FirstName)
+                : query.OrderByDescending(e => e.FirstName),
+            "Department" => sortAscending
+                ? query.OrderBy(e => e.Department)
+                : query.OrderByDescending(e => e.Department),
+            "EmploymentStatus" => sortAscending
+                ? query.OrderBy(e => e.EmploymentStatus)
+                : query.OrderByDescending(e => e.EmploymentStatus),
+            _ => query.OrderBy(e => e.EmployeeId)
+        };
+
+        // Apply pagination
+        filteredEmployees = query
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private void HandleSearch()
+    {
+        currentPage = 1;
+        ApplyFiltersAndSort();
+    }
+
+    private void ApplyFilters()
+    {
+        currentPage = 1;
+        ApplyFiltersAndSort();
+    }
+
+    private void ClearFilters()
+    {
+        searchTerm = "";
+        statusFilter = "";
+        sortColumn = "FirstName";
+        sortAscending = true;
+        currentPage = 1;
+        ApplyFiltersAndSort();
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+            sortAscending = !sortAscending;
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplyFiltersAndSort();
+    }
+
+    private string GetSortIcon(string column)
+    {
+        if (sortColumn != column)
+            return "";
+        return sortAscending ? " ▲" : " ▼";
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Active" => "hr-badge-active",
+            "Inactive" => "hr-badge-inactive",
+            "On Leave" => "hr-badge-leave",
+            "Terminated" => "hr-badge-terminated",
+            _ => ""
+        };
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page < 1 || page > totalPages)
+            return;
+        currentPage = page;
+        ApplyFiltersAndSort();
+    }
+
+    private void OnPageSizeChanged()
+    {
+        currentPage = 1;
+        ApplyFiltersAndSort();
+    }
+}

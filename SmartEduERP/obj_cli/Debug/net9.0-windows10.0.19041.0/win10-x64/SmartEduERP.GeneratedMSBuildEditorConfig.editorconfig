@@ -1,0 +1,485 @@
+is_global = true
+build_property.TargetFramework = net9.0-windows10.0.19041.0
+build_property.TargetFramework = net9.0-windows10.0.19041.0
+build_property.TargetPlatformMinVersion = 10.0.17763.0
+build_property.TargetPlatformMinVersion = 10.0.17763.0
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 9A19103F-16F7-4668-BE54-9A1E7A4F7556
+build_property.ProjectTypeGuids = 9A19103F-16F7-4668-BE54-9A1E7A4F7556
+build_property.InvariantGlobalization = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = SmartEduERP
+build_property.RootNamespace = SmartEduERP
+build_property.ProjectDir = C:\Users\Dandy\source\repos\SmartEduERP\SmartEduERP - Copy 2\SmartEduERP\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTAotOptimizerEnabled = true
+build_property.CsWinRTAotExportsEnabled = 
+build_property.CsWinRTRcwFactoryFallbackGeneratorForceOptIn = 
+build_property.CsWinRTRcwFactoryFallbackGeneratorForceOptOut = 
+build_property.CsWinRTCcwLookupTableGeneratorEnabled = true
+build_property.CsWinRTMergeReferencedActivationFactories = 
+build_property.CsWinRTAotWarningLevel = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.RazorLangVersion = 9.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\Dandy\source\repos\SmartEduERP\SmartEduERP - Copy 2\SmartEduERP
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/App.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.App.xaml
+build_metadata.AdditionalFiles.TargetPath = App.xaml
+build_metadata.AdditionalFiles.RelativePath = App.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/AppShell.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.AppShell.xaml
+build_metadata.AdditionalFiles.TargetPath = AppShell.xaml
+build_metadata.AdditionalFiles.RelativePath = AppShell.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/MainPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.MainPage.xaml
+build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
+build_metadata.AdditionalFiles.RelativePath = MainPage.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/obj/Debug/net9.0-windows10.0.19041.0/win10-x64/Platforms/Windows/App.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.obj.Debug.net9._0_windows10._0._19041._0.win10_x64.Platforms.Windows.App.xaml
+build_metadata.AdditionalFiles.TargetPath = obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xaml
+build_metadata.AdditionalFiles.RelativePath = obj\Debug\net9.0-windows10.0.19041.0\win10-x64\Platforms\Windows\App.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Resources/Styles/Colors.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.Resources.Styles.Colors.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources\Styles\Colors.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources\Styles\Colors.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Resources/Styles/Styles.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.Resources.Styles.Styles.xaml
+build_metadata.AdditionalFiles.TargetPath = Resources\Styles\Styles.xaml
+build_metadata.AdditionalFiles.RelativePath = Resources\Styles\Styles.xaml
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Layout/MainLayout.razor.css]
+build_metadata.AdditionalFiles.GenKind = Css
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.Components.Layout.MainLayout.razor.css
+build_metadata.AdditionalFiles.TargetPath = Components\Layout\MainLayout.razor.css
+build_metadata.AdditionalFiles.RelativePath = Components\Layout\MainLayout.razor.css
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/obj/Debug/net9.0-android/assets/wwwroot/app.css]
+build_metadata.AdditionalFiles.GenKind = Css
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.obj.Debug.net9._0_android.assets.wwwroot.app.css
+build_metadata.AdditionalFiles.TargetPath = obj\Debug\net9.0-android\assets\wwwroot\app.css
+build_metadata.AdditionalFiles.RelativePath = obj\Debug\net9.0-android\assets\wwwroot\app.css
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/obj/Debug/net9.0-android/assets/wwwroot/_content/ChartJs.Blazor/ChartJSBlazor.css]
+build_metadata.AdditionalFiles.GenKind = Css
+build_metadata.AdditionalFiles.ManifestResourceName = SmartEduERP.obj.Debug.net9._0_android.assets.wwwroot._content.ChartJs.Blazor.ChartJSBlazor.css
+build_metadata.AdditionalFiles.TargetPath = obj\Debug\net9.0-android\assets\wwwroot\_content\ChartJs.Blazor\ChartJSBlazor.css
+build_metadata.AdditionalFiles.RelativePath = obj\Debug\net9.0-android\assets\wwwroot\_content\ChartJs.Blazor\ChartJSBlazor.css
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/App.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Layout/MainLayout.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTWFpbkxheW91dC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Layout/NavMenu.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTmF2TWVudS5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Accounting/Accounting.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBY2NvdW50aW5nXEFjY291bnRpbmcucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/AdminDashboard.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pbkRhc2hib2FyZC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Admin/AddUser.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxBZGRVc2VyLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Admin/EditUser.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxFZGl0VXNlci5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Admin/UserList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxVc2VyTGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/AuditLogs.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBdWRpdExvZ3MucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/AuthorizedComponentBase.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBdXRob3JpemVkQ29tcG9uZW50QmFzZS5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/ConfirmEmail.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb25maXJtRW1haWwucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Enrollments/CreateEnrollment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFbnJvbGxtZW50c1xDcmVhdGVFbnJvbGxtZW50LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Enrollments/EditEnrollment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFbnJvbGxtZW50c1xFZGl0RW5yb2xsbWVudC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Enrollments/EnrollmentList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFbnJvbGxtZW50c1xFbnJvbGxtZW50TGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Error.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xFcnJvci5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Grades/CreateGrade.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xHcmFkZXNcQ3JlYXRlR3JhZGUucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Grades/EditGrade.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xHcmFkZXNcRWRpdEdyYWRlLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Grades/GradeList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xHcmFkZXNcR3JhZGVMaXN0LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Grades/ViewGrades.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xHcmFkZXNcVmlld0dyYWRlcy5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Home.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrAttendance.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIckF0dGVuZGFuY2UucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrDashboard.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIckRhc2hib2FyZC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrEmployees.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIckVtcGxveWVlcy5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrLayout.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIckxheW91dC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrLeave.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIckxlYXZlLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrPerformance.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIclBlcmZvcm1hbmNlLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Hr/HrRecruitment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIclxIclJlY3J1aXRtZW50LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Login.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xMb2dpbi5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Payments/CreatePayment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQYXltZW50c1xDcmVhdGVQYXltZW50LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Payments/EditPayment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQYXltZW50c1xFZGl0UGF5bWVudC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Payments/PaymentList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQYXltZW50c1xQYXltZW50TGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Payments/PaymentsDetails.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQYXltZW50c1xQYXltZW50c0RldGFpbHMucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Register.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZWdpc3Rlci5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/StudentDashboard.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50RGFzaGJvYXJkLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/CreateStudent.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xDcmVhdGVTdHVkZW50LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/EditProfile.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xFZGl0UHJvZmlsZS5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/EditStudent.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xFZGl0U3R1ZGVudC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/Payment.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xQYXltZW50LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/Profile.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xQcm9maWxlLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/Schedule.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xTY2hlZHVsZS5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Students/StudentList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdHVkZW50c1xTdHVkZW50TGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Subjects/CreateSubject.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdWJqZWN0c1xDcmVhdGVTdWJqZWN0LnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Subjects/EditSubject.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdWJqZWN0c1xFZGl0U3ViamVjdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Subjects/SubjectList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdWJqZWN0c1xTdWJqZWN0TGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/TeacherDashboard.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyRGFzaGJvYXJkLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Teachers/Attendance.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyc1xBdHRlbmRhbmNlLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Teachers/CreateTeacher.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyc1xDcmVhdGVUZWFjaGVyLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Teachers/EditTeacher.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyc1xFZGl0VGVhY2hlci5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Teachers/TeacherList.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyc1xUZWFjaGVyTGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Pages/Teachers/TeacherSchedule.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUZWFjaGVyc1xUZWFjaGVyU2NoZWR1bGUucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/RedirectToLogin.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSZWRpcmVjdFRvTG9naW4ucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Routes.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Shared/ConfirmationDialog.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcQ29uZmlybWF0aW9uRGlhbG9nLnJhem9y
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/Shared/Toast.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xTaGFyZWRcVG9hc3QucmF6b3I=
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Dandy/source/repos/SmartEduERP/SmartEduERP - Copy 2/SmartEduERP/Components/_Imports.razor]
+build_metadata.AdditionalFiles.GenKind = 
+build_metadata.AdditionalFiles.ManifestResourceName = 
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xfSW1wb3J0cy5yYXpvcg==
+build_metadata.AdditionalFiles.RelativePath = 
+build_metadata.AdditionalFiles.CssScope = 

@@ -1,0 +1,271 @@
+@page "/hr/leave"
+@using System.Linq
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using SmartEduERP.Components.Pages.Hr
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,HR")]
+@inject HrService HrService
+
+<PageTitle>HR - Leave Requests</PageTitle>
+
+<style>
+    .hr-page { padding: 1.5rem; }
+    .hr-title { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .hr-subtitle { font-size: 0.95rem; color: #6b7280; margin-bottom: 1.25rem; }
+    .hr-card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .hr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem 1rem; }
+    .hr-label { font-size: 0.8rem; font-weight: 500; color: #4b5563; margin-bottom: 0.2rem; }
+    .hr-input, .hr-select, .hr-textarea { width: 100%; border-radius: 6px; border: 1px solid #d1d5db; padding: 0.45rem 0.6rem; font-size: 0.85rem; }
+    .hr-textarea { min-height: 80px; }
+    .hr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .hr-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e5e5; font-weight: 500; color: #6b7280; background: #f9fafb; }
+    .hr-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f3f4f6; }
+    .hr-btn-primary { border-radius: 8px; border: none; padding: 0.45rem 0.9rem; background: #2563eb; color: #fff; font-size: 0.85rem; cursor: pointer; }
+    .hr-btn-small { border-radius: 999px; border: 1px solid #d1d5db; padding: 0.2rem 0.65rem; background: #fff; font-size: 0.75rem; cursor: pointer; }
+    .hr-badge { font-size: inherit; padding: 0; border-radius: 0; font-weight: inherit; background: transparent; color: inherit; }
+    .hr-badge-pending { background: transparent; color: inherit; }
+    .hr-badge-approved { background: transparent; color: inherit; }
+    .hr-badge-rejected { background: transparent; color: inherit; }
+    .hr-table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem; }
+    .hr-pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1rem; }
+    .hr-pagination-button { border-radius: 6px; border: 1px solid #d1d5db; padding: 0.35rem 0.7rem; background: #fff; font-size: 0.8rem; cursor: pointer; }
+    .hr-pagination-button.active { background: #111827; color: #fff; border-color: #111827; }
+    .hr-pagination-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hr-pagination-info { font-size: 0.8rem; color: #6b7280; margin: 0 0.75rem; }
+    .hr-page-size-select { width: auto; min-width: 120px; }
+</style>
+
+<HrLayout>
+<div class="hr-page">
+    <div class="hr-title">Leave Requests</div>
+    <div class="hr-subtitle">Submit and manage employee leave requests.</div>
+
+    <div class="hr-card">
+        <div class="hr-grid">
+            <div>
+                <div class="hr-label">Employee</div>
+                <select class="hr-select" @bind="newRequest.EmployeeId">
+                    <option value="0">Select employee...</option>
+                    @foreach (var e in employees)
+                    {
+                        <option value="@e.EmployeeId">@e.FirstName @e.LastName</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div class="hr-label">Start Date</div>
+                <InputDate DateTimeFormat="yyyy-MM-dd" class="hr-input" @bind-Value="newRequest.StartDate" />
+            </div>
+            <div>
+                <div class="hr-label">End Date</div>
+                <InputDate DateTimeFormat="yyyy-MM-dd" class="hr-input" @bind-Value="newRequest.EndDate" />
+            </div>
+            <div>
+                <div class="hr-label">Leave Type</div>
+                <InputText class="hr-input" @bind-Value="newRequest.LeaveType" />
+            </div>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <div class="hr-label">Reason</div>
+            <textarea class="hr-textarea" @bind="newRequest.Reason"></textarea>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <button class="hr-btn-primary" @onclick="SubmitRequestAsync">Submit Request</button>
+        </div>
+        @if (!string.IsNullOrEmpty(leaveErrorMessage))
+        {
+            <div style="margin-top:0.5rem;font-size:0.8rem;color:#b91c1c;">@leaveErrorMessage</div>
+        }
+    </div>
+
+    <div class="hr-card">
+        <div class="hr-table-toolbar">
+            <div style="font-weight:600;">All Requests (@leaveTotalRecords)</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.8rem;color:#6b7280;">Rows per page:</span>
+                <select class="hr-input hr-page-size-select" @bind="leavePageSize" @bind:after="OnLeavePageSizeChanged">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        @if (leaveRequests.Any())
+        {
+            <table class="hr-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Dates</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Requested At</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in leaveRequests)
+                    {
+                        <tr>
+                            <td>@(r.Employee != null ? r.Employee.FirstName + " " + r.Employee.LastName : "Unknown")</td>
+                            <td>@r.StartDate.ToString("MMM dd") - @r.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td>@r.LeaveType</td>
+                            <td>
+                                <span class="hr-badge @(r.Status == "Pending" ? "hr-badge-pending" : r.Status == "Approved" ? "hr-badge-approved" : "hr-badge-rejected")">@r.Status</span>
+                            </td>
+                            <td>@r.RequestedAt.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                @if (r.Status == "Pending")
+                                {
+                                    <button class="hr-btn-small" @onclick='() => SetStatus(r.LeaveRequestId, "Approved")'>Approve</button>
+                                    <button class="hr-btn-small" @onclick='() => SetStatus(r.LeaveRequestId, "Rejected")'>Reject</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (leaveTotalPages > 1)
+            {
+                <div class="hr-pagination">
+                    <button class="hr-pagination-button" @onclick="() => ChangeLeavePage(leaveCurrentPage - 1)" disabled="@(leaveCurrentPage == 1)">
+                        Previous
+                    </button>
+
+                    <span class="hr-pagination-info">
+                        Page @leaveCurrentPage of @leaveTotalPages
+                    </span>
+
+                    @for (int i = Math.Max(1, leaveCurrentPage - 2); i <= Math.Min(leaveTotalPages, leaveCurrentPage + 2); i++)
+                    {
+                        var pageNum = i;
+                        <button class="hr-pagination-button @(leaveCurrentPage == pageNum ? "active" : "")" @onclick="() => ChangeLeavePage(pageNum)">
+                            @pageNum
+                        </button>
+                    }
+
+                    <button class="hr-pagination-button" @onclick="() => ChangeLeavePage(leaveCurrentPage + 1)" disabled="@(leaveCurrentPage == leaveTotalPages)">
+                        Next
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="font-size:0.85rem;color:#6b7280;">No leave requests yet.</div>
+        }
+    </div>
+</div>
+</HrLayout>
+
+@code {
+    private List<Employee> employees = new();
+    private List<LeaveRequest> allLeaveRequests = new();
+    private List<LeaveRequest> leaveRequests = new();
+    private LeaveRequest newRequest = new LeaveRequest
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddDays(1),
+        LeaveType = "Vacation"
+    };
+    private string? leaveErrorMessage;
+
+    private int leaveCurrentPage = 1;
+    private int leavePageSize = 10;
+    private int leaveTotalRecords = 0;
+    private int leaveTotalPages => (int)Math.Ceiling((double)leaveTotalRecords / leavePageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        employees = await HrService.GetEmployeesAsync();
+        await LoadRequestsAsync();
+    }
+
+    private async Task LoadRequestsAsync()
+    {
+        allLeaveRequests = await HrService.GetLeaveRequestsAsync();
+        leaveTotalRecords = allLeaveRequests.Count;
+        leaveCurrentPage = 1;
+        ApplyLeavePagination();
+    }
+
+    private async Task SubmitRequestAsync()
+    {
+        leaveErrorMessage = null;
+
+        if (newRequest.EmployeeId == 0)
+        {
+            leaveErrorMessage = "Please select an employee.";
+            return;
+        }
+
+        if (newRequest.StartDate == default || newRequest.EndDate == default)
+        {
+            leaveErrorMessage = "Please select start and end dates.";
+            return;
+        }
+
+        if (newRequest.EndDate < newRequest.StartDate)
+        {
+            leaveErrorMessage = "End date cannot be earlier than start date.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newRequest.LeaveType))
+        {
+            leaveErrorMessage = "Leave type is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newRequest.Reason))
+        {
+            leaveErrorMessage = "Reason is required.";
+            return;
+        }
+
+        await HrService.SubmitLeaveRequestAsync(newRequest);
+        newRequest = new LeaveRequest
+        {
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today.AddDays(1),
+            LeaveType = "Vacation"
+        };
+
+        await LoadRequestsAsync();
+    }
+
+    private async Task SetStatus(int leaveRequestId, string status)
+    {
+        await HrService.UpdateLeaveStatusAsync(leaveRequestId, status, "Admin", null);
+        await LoadRequestsAsync();
+    }
+
+    private void ApplyLeavePagination()
+    {
+        leaveRequests = allLeaveRequests
+            .Skip((leaveCurrentPage - 1) * leavePageSize)
+            .Take(leavePageSize)
+            .ToList();
+    }
+
+    private void OnLeavePageSizeChanged()
+    {
+        leaveCurrentPage = 1;
+        ApplyLeavePagination();
+    }
+
+    private void ChangeLeavePage(int page)
+    {
+        if (page < 1 || page > leaveTotalPages)
+        {
+            return;
+        }
+
+        leaveCurrentPage = page;
+        ApplyLeavePagination();
+    }
+}

@@ -1,0 +1,83 @@
+@page "/home"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+
+<PageTitle>SmartEduERP - Home</PageTitle>
+
+<div class="container mt-5">
+    <h1>Welcome to SmartEduERP</h1>
+    <p class="lead">Educational Resource Planning System</p>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Database Connection</h5>
+        </div>
+        <div class="card-body">
+            <p>Your application is now connected to the SQL Server database:</p>
+            <ul>
+                <li><strong>Server:</strong> LAPTOP-1ERS664U\SQLEXPRESS</li>
+                <li><strong>Database:</strong> SmartEduERP</li>
+                <li><strong>Authentication:</strong> Windows Authentication</li>
+            </ul>
+            <a href="/test-database" class="btn btn-primary">Test Database Connection</a>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Available Entities</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <ul>
+                        <li>Students</li>
+                        <li>Teachers</li>
+                        <li>Subjects</li>
+                        <li>Enrollments</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul>
+                        <li>Grades</li>
+                        <li>Payments</li>
+                        <li>User Accounts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">🎉 System Ready!</h5>
+        </div>
+        <div class="card-body">
+            <h6>✅ What's Implemented:</h6>
+            <ul class="mb-3">
+                <li>Full authentication system (Login/Register)</li>
+                <li>Complete CRUD for Students with search</li>
+                <li>List views for all entities (Teachers, Subjects, Enrollments, Grades, Payments)</li>
+                <li>Dashboard with statistics and quick actions</li>
+                <li>Services for all database operations</li>
+                <li>Soft delete support (data preserved)</li>
+            </ul>
+            
+            <h6>🚀 Quick Start:</h6>
+            <ol class="mb-3">
+                <li>Test database connection (button above)</li>
+                <li><a href="/register">Register</a> a new user account</li>
+                <li><a href="/login">Login</a> with your credentials</li>
+                <li>Explore the <a href="/dashboard">Dashboard</a></li>
+                <li>Start adding students, teachers, and more!</li>
+            </ol>
+
+            <h6>📚 Documentation:</h6>
+            <ul class="mb-0">
+                <li><code>QUICK_START.md</code> - Get started in 5 minutes</li>
+                <li><code>IMPLEMENTATION_GUIDE.md</code> - Complete feature documentation</li>
+                <li><code>DATABASE_CONNECTION.md</code> - Database usage guide</li>
+                <li><code>SETUP_SUMMARY.md</code> - Quick reference</li>
+            </ul>
+        </div>
+    </div>
+</div>

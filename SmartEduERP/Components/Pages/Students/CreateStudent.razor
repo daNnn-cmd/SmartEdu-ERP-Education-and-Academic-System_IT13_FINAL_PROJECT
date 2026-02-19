@@ -1,0 +1,990 @@
+﻿@page "/students/create"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject StudentService StudentService
+@inject NavigationManager Navigation
+@inject AuthStateProvider AuthStateProvider
+@inject IGlobalSyncService GlobalSyncService
+@inject IBidirectionalSyncService BidirectionalSyncService
+@inject IToastService ToastService
+
+<PageTitle>Create Student - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+        position: relative; /* ✅ ADDED FOR SYNC BADGE */
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .form-card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+        .form-card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0;
+        }
+
+    .form-card-body {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+    }
+
+    .form-input, .form-select, .form-textarea {
+        padding: 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+        transition: all 0.2s;
+    }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-start;
+        padding-top: 1.5rem;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .submit-button, .cancel-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: 1px solid;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .submit-button {
+        background: #000;
+        color: white;
+        border-color: #000;
+    }
+
+        .submit-button:hover:not(:disabled) {
+            background: #404040;
+            border-color: #404040;
+        }
+
+        .submit-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .cancel-button {
+        background: white;
+        color: #404040;
+        border-color: #e5e5e5;
+    }
+
+        .cancel-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .error-message {
+        padding: 0.75rem 1rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .spinner-small {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        color: #dc2626;
+        margin-top: 0.25rem;
+    }
+
+    /* ✅ ADD SYNC STYLES FROM ADMIN DASHBOARD */
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+        .sync-status.syncing {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -5px;
+    left: 0px;   /* 👈 moved to left */
+    right: auto;  /* 👈 disable right positioning */
+}
+
+    /* Logout Confirmation Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-icon {
+        width: 40px;
+        height: 40px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+    }
+
+    .modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-body {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-text {
+        font-size: 0.875rem;
+        color: #737373;
+        line-height: 1.5;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .modal-button-cancel {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .modal-button-cancel:hover {
+            background: #f5f5f5;
+        }
+
+    .modal-button-confirm {
+        background: #000;
+        color: white;
+    }
+
+        .modal-button-confirm:hover {
+            background: #262626;
+        }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar - UPDATED TO MATCH ADMIN DASHBOARD -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/admin-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/subjects" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/enrollment-approvals" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Enrollment Approvals</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+               
+               
+               
+                <li class="sidebar-menu-item">
+                    <a href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/audit-logs" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </NavLink>
+                </li>
+                
+                <!-- ✅ ADDED: Global Sync Menu Item (Same as Admin Dashboard) -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Create New Student</h1>
+            <p>Add a new student to the system</p>
+        </div>
+
+        <div class="form-container">
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h2>Student Information</h2>
+                </div>
+                <div class="form-card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">
+                            <strong>Error:</strong> @errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="@student" OnValidSubmit="@HandleSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="form-grid">
+                            <!-- Personal Information Section -->
+                            <div class="form-group">
+                                <label class="form-label">First Name *</label>
+                                <InputText class="form-input" @bind-Value="student.FirstName" placeholder="Ex. Jetro" />
+                                <ValidationMessage For="@(() => student.FirstName)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Last Name *</label>
+                                <InputText class="form-input" @bind-Value="student.LastName" placeholder="Ex. Casan" />
+                                <ValidationMessage For="@(() => student.LastName)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Middle Name</label>
+                                <InputText class="form-input" @bind-Value="student.MiddleName" placeholder="Enter middle name" />
+                                <ValidationMessage For="@(() => student.MiddleName)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Suffix</label>
+                                <InputSelect class="form-select" @bind-Value="student.Suffix">
+                                    <option value="">Select suffix...</option>
+                                    <option value="Jr.">Jr.</option>
+                                    <option value="Sr.">Sr.</option>
+                                    <option value="II">II</option>
+                                    <option value="III">III</option>
+                                    <option value="IV">IV</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => student.Suffix)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Gender</label>
+                                <InputSelect class="form-select" @bind-Value="student.Gender">
+                                    <option value="">Select gender...</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </InputSelect>
+                                <ValidationMessage For="@(() => student.Gender)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth *</label>
+                                <InputDate class="form-input" @bind-Value="student.DateOfBirth" />
+                                <ValidationMessage For="@(() => student.DateOfBirth)" class="validation-message" />
+                            </div>
+
+                            <!-- Contact Information Section -->
+                            <div class="form-group full-width">
+                                <label class="form-label">Email Address *</label>
+                                <InputText class="form-input" @bind-Value="student.Email" type="email" placeholder="Enter email address" />
+                                <ValidationMessage For="@(() => student.Email)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Contact Number</label>
+                                <InputText class="form-input" @bind-Value="student.ContactNumber" placeholder="Enter phone number" />
+                                <ValidationMessage For="@(() => student.ContactNumber)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label class="form-label">Address</label>
+                                <InputTextArea class="form-textarea" @bind-Value="student.Address" placeholder="Enter full address" rows="3" />
+                                <ValidationMessage For="@(() => student.Address)" class="validation-message" />
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="submit-button" disabled="@saving">
+                                @if (saving)
+                                {
+                                    <div class="spinner-small"></div>
+                                    <span>Creating Student...</span>
+                                }
+                                else
+                                {
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                        <polyline points="7 3 7 8 15 8"></polyline>
+                                    </svg>
+                                    <span>Create Student</span>
+                                }
+                            </button>
+                            <a href="/students" class="cancel-button">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                <span>Cancel</span>
+                            </a>
+                        </div>
+                    </EditForm>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <ConfirmationDialog IsVisible="showLogoutModal" Title="Confirm Logout"
+                        Message="Are you sure you want to log out? You will need to sign in again to access your account."
+                        ConfirmText="Log Out" ProcessingText="Logging out..." Type="@ConfirmationDialog.ConfirmationType.Logout"
+                        IsProcessing="isLoggingOut" OnConfirm="ConfirmLogout" OnCancel="HideLogoutConfirmation" />
+</div>
+
+@code {
+    private Student student = new();
+    private string? errorMessage;
+    private bool saving = false;
+    private bool showLogoutModal = false;
+    private bool isLoggingOut = false;
+    private string userName = "";
+
+    // ✅ ADDED: Sync properties (Same as Admin Dashboard)
+    private bool isSyncing = false;
+    private string syncMessage = "";
+    private string syncStatusClass = "";
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Admin";
+
+        // Set default values
+        student.RegistrationDate = DateTime.Now;
+        student.EnrollmentStatus = "Active";
+        student.IsEmailConfirmed = false;
+
+        // ✅ ADDED: Start periodic sync status updates (Same as Admin Dashboard)
+        await LoadPendingSyncCount();
+        syncStatusTimer = new System.Threading.Timer(async _ =>
+        {
+            await LoadPendingSyncCount();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    // ✅ ADDED: Global Sync method (Same as Admin Dashboard)
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            // Use the new bidirectional sync service
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+
+                // Refresh pending count
+                await LoadPendingSyncCount();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            // Clear message after 5 seconds
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = "";
+                syncStatusClass = "";
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    // ✅ ADDED: Load pending sync count (Same as Admin Dashboard)
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        // Prevent multiple submissions
+        if (saving) return;
+
+        saving = true;
+        errorMessage = null;
+        StateHasChanged(); // Force UI update to show loading state
+
+        try
+        {
+            // Capitalize names before saving
+            student.FirstName = CapitalizeName(student.FirstName);
+            student.LastName = CapitalizeName(student.LastName);
+
+            if (!string.IsNullOrWhiteSpace(student.MiddleName))
+            {
+                student.MiddleName = CapitalizeName(student.MiddleName);
+            }
+
+            await StudentService.CreateStudentAsync(student);
+
+            // Add small delay to ensure user sees the loading state
+            await Task.Delay(500);
+
+            Navigation.NavigateTo("/students");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            saving = false;
+            StateHasChanged(); // Update UI to hide loading state
+        }
+    }
+
+    private string CapitalizeName(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return input;
+
+        input = input.Trim();
+
+        // Handle multiple words (like "mary jane" becomes "Mary Jane")
+        string[] words = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (words[i].Length > 0)
+            {
+                words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1).ToLower();
+            }
+        }
+
+        return string.Join(" ", words);
+    }
+
+    // Logout functionality
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutModal = true;
+        StateHasChanged();
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutModal = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmLogout()
+    {
+        if (isLoggingOut) return;
+
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout error: {ex.Message}");
+            // Fallback to simple logout
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutModal = false;
+        }
+    }
+
+    // ✅ ADDED: Dispose method for timer (Same as Admin Dashboard)
+    public void Dispose()
+    {
+        syncStatusTimer?.Dispose();
+    }
+}

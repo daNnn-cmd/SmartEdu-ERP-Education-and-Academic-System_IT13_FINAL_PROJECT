@@ -1,0 +1,474 @@
+@page "/"
+@page "/login"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@using SmartEduERP.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject AuthService AuthService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Login - Academic System</PageTitle>
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .login-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/bg.jpg') center/cover no-repeat;
+        padding: 2rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        position: relative;
+    }
+
+        /* Optional: Add a semi-transparent overlay for better text readability */
+        .login-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 0;
+        }
+
+    .login-card {
+        width: 100%;
+        max-width: 560px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e8e8e8;
+        padding: 3.5rem 3rem 3rem;
+        position: relative; /* Ensure it stays above the overlay */
+        z-index: 1;
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 560px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e8e8e8;
+        padding: 3.5rem 3rem 3rem;
+    }
+
+    .login-header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+    }
+
+    .login-logo {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 2rem;
+        display: block;
+    }
+
+    .login-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.02em;
+    }
+
+    .login-subtitle {
+        font-size: 0.9375rem;
+        color: #737373;
+        line-height: 1.6;
+        font-weight: 400;
+    }
+
+    .login-body {
+        width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: #f5f5f5;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        color: #000;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+    .form-control.error-border {
+        border: 2px solid #d43a3a;
+        border-radius: 4px;
+        background-color: #fef2f2;
+    }
+
+        .form-control::placeholder {
+            color: #a3a3a3;
+        }
+
+        .form-control:focus {
+            outline: none;
+            background: #fff;
+            border-color: #e0e0e0;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+        }
+
+        .form-control.error-border:focus {
+            border-color: #d43a3a;
+            box-shadow: 0 0 0 1px rgba(212, 58, 58, 0.15);
+            background-color: #fef2f2;
+        }
+
+    .password-wrapper {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #737373;
+        cursor: pointer;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+
+        .password-toggle:hover {
+            color: #404040;
+        }
+
+    .btn-signin {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: #000;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 0.5rem;
+        font-family: inherit;
+    }
+
+        .btn-signin:hover:not(:disabled) {
+            background: #1a1a1a;
+        }
+
+        .btn-signin:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-signin:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .btn-register {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        background: transparent;
+        color: #000;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9375rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 1rem;
+        font-family: inherit;
+    }
+
+        .btn-register:hover {
+            background: #f8f8f8;
+            border-color: #000;
+        }
+
+        .btn-register:active {
+            transform: translateY(1px);
+        }
+
+    .error-alert {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.625rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .success-alert {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #16a34a;
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.625rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .error-icon {
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+
+    .success-icon {
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+
+    /* Remove default validation message styles */
+    .validation-message {
+        color: #dc2626;
+        font-size: 0.8125rem;
+        margin-top: 0.375rem;
+    }
+</style>
+
+<div class="login-page" style="background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('/images/bg.jpg') center/cover no-repeat;">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="/images/logo.png" alt="Academic System Logo" class="login-logo" />
+            <h1 class="login-title">Smart EDU</h1>
+            <p class="login-subtitle">Log in to access Education and Academic System</p>
+        </div>
+
+        <div class="login-body">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="error-alert">
+                    <svg class="error-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>@errorMessage</span>
+                </div>
+            }
+
+            <EditForm Model="@loginModel" OnValidSubmit="@HandleLogin" OnInvalidSubmit="@HandleInvalidSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="form-group">
+                    <label for="username" class="form-label">Username or email</label>
+                    <InputText id="username"
+                               class="@GetUsernameInputClass()"
+                               @bind-Value="loginModel.Username"
+                               @oninput="HandleUsernameInput"
+                               placeholder="Enter your username"
+                               autocomplete="username" />
+                    <ValidationMessage For="@(() => loginModel.Username)" class="validation-message" />
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="password-wrapper">
+                        <input id="password"
+                               type="@(showPassword ? "text" : "password")"
+                               class="@GetPasswordInputClass()"
+                               @bind="loginModel.Password"
+                               placeholder="Enter your password"
+                               autocomplete="current-password"
+                               @oninput="HandlePasswordInput" />
+                        <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
+                            @if (showPassword)
+                            {
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            }
+                            else
+                            {
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            }
+                        </button>
+                    </div>
+                    <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
+                    @if (errorMessage == InvalidCredentialsMessage || errorMessage == EmptyFieldsMessage)
+                    {
+                        <div class="validation-message">@errorMessage</div>
+                    }
+                </div>
+
+                <button type="submit" class="btn-signin" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span>Logging in...</span>
+                    }
+                    else
+                    {
+                        <span>Log In</span>
+                    }
+                </button>
+            </EditForm>
+
+            
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string? errorMessage;
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private bool showUsernameErrorBorder = false;
+    private bool showPasswordErrorBorder = false;
+    private const string InvalidCredentialsMessage = "Invalid username/email or password.";
+    private const string EmptyFieldsMessage = "Please enter your username and password.";
+
+    private string GetUsernameInputClass()
+    {
+        return showUsernameErrorBorder ? "form-control error-border" : "form-control";
+    }
+
+    private string GetPasswordInputClass()
+    {
+        return showPasswordErrorBorder ? "form-control error-border" : "form-control";
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private void NavigateToRegister()
+    {
+        Navigation.NavigateTo("/register");
+    }
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = null;
+        showUsernameErrorBorder = false;
+        showPasswordErrorBorder = false;
+
+        try
+        {
+            var user = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+
+            if (user != null)
+            {
+                AuthStateProvider.MarkUserAsAuthenticated(
+                    user.UserId,
+                    user.Username,
+                    user.Role ?? "User",
+                    user.FirstName ?? "",
+                    user.LastName ?? ""
+                );
+
+                // Redirect based on user role - students go to student dashboard by default
+                var dashboardUrl = user.Role?.ToLower() switch
+                {
+                    "admin" => "/admin-dashboard",
+                    "teacher" => "/teacher-dashboard",
+                    "student" => "/student-dashboard",
+                    "hr" => "/hr",
+                    "accounting" => "/accounting",
+                    _ => "/student-dashboard" // Default new registrations to student dashboard
+                };
+
+                Navigation.NavigateTo(dashboardUrl, true);
+            }
+            else
+            {
+                errorMessage = InvalidCredentialsMessage;
+                showUsernameErrorBorder = true;
+                showPasswordErrorBorder = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        showUsernameErrorBorder = true;
+        showPasswordErrorBorder = true;
+
+        if (string.IsNullOrWhiteSpace(loginModel.Username) || string.IsNullOrWhiteSpace(loginModel.Password))
+        {
+            errorMessage = EmptyFieldsMessage;
+        }
+    }
+
+    private void HandleUsernameInput(ChangeEventArgs _)
+    {
+        if (showUsernameErrorBorder)
+        {
+            showUsernameErrorBorder = false;
+        }
+
+        if (errorMessage == InvalidCredentialsMessage || errorMessage == EmptyFieldsMessage)
+        {
+            errorMessage = null;
+        }
+    }
+
+    private void HandlePasswordInput(ChangeEventArgs _)
+    {
+        if (showPasswordErrorBorder)
+        {
+            showPasswordErrorBorder = false;
+        }
+
+        if (errorMessage == InvalidCredentialsMessage || errorMessage == EmptyFieldsMessage)
+        {
+            errorMessage = null;
+        }
+    }
+
+    public class LoginModel
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Username { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Password { get; set; } = "";
+    }
+}

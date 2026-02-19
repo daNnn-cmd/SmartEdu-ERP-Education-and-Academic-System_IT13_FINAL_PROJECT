@@ -1,0 +1,72 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using SmartEduERP.Services
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">SmartEduERP</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <AuthorizeView>
+                <Authorized Context="authContext">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/dashboard">Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/students">Students</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/teachers">Teachers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/subjects">Subjects</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/enrollments">Enrollments</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/grades">Grades</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/payments">Payments</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/accounting">Accounting</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/hr">HR</a>
+                        </li>
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        <span class="navbar-text me-3">
+                            Welcome, <strong>@authContext.User.Identity?.Name</strong>
+                        </span>
+                        <button class="btn btn-outline-light btn-sm" @onclick="Logout">Logout</button>
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/register">Register</a>
+                        </li>
+                    </ul>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private void Logout()
+    {
+        AuthStateProvider.MarkUserAsLoggedOut();
+        Navigation.NavigateTo("/login", true);
+    }
+}

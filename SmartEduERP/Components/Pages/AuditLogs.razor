@@ -1,0 +1,1127 @@
+@page "/audit-logs"
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Services
+@using SmartEduERP.Components.Shared
+@inject AuditLogService AuditLogService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IBidirectionalSyncService BidirectionalSyncService
+@inject IGlobalSyncService GlobalSyncService
+@inject IToastService ToastService
+
+<PageTitle>Audit Logs - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 2rem;
+    }
+
+    .audit-header {
+        margin-bottom: 2rem;
+    }
+
+        .audit-header h1 {
+            font-size: 1.875rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .audit-header p {
+            color: #737373;
+            margin: 0;
+        }
+
+    .controls-bar {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+    }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+    .filter-group {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+        .filter-group label {
+            font-size: 0.875rem;
+            color: #404040;
+            font-weight: 500;
+        }
+
+        .filter-group select {
+            padding: 0.625rem 1rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+        }
+
+    .btn {
+        padding: 0.625rem 1.25rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #000;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #404040;
+        }
+
+    .btn-secondary {
+        background: #f5f5f5;
+        color: #404040;
+    }
+
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+
+    .audit-table-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .table-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .table-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0;
+        }
+
+    .badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #f5f5f5;
+        color: #404040;
+    }
+
+    .audit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .audit-table thead {
+            background: #f9fafb;
+        }
+
+        .audit-table th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #737373;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .audit-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 0.875rem;
+            color: #404040;
+        }
+
+        .audit-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+    .action-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .action-create {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .action-update {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .action-delete {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .action-login {
+        background: #f3e8ff;
+        color: #6b21a8;
+    }
+
+    .action-logout {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .action-other {
+        background: #f5f5f5;
+        color: #404040;
+    }
+
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #737373;
+    }
+
+    .loading {
+        padding: 3rem;
+        text-align: center;
+        color: #737373;
+    }
+
+    .pagination {
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .pagination-info {
+        font-size: 0.875rem;
+        color: #737373;
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        max-width: 400px;
+        width: 90%;
+    }
+
+        .modal-content h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.25rem;
+            color: #000;
+        }
+
+        .modal-content p {
+            margin: 0 0 1.5rem 0;
+            color: #737373;
+        }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .user-badge,
+    .action-badge {
+        background: none !important;
+        color: #333 !important;
+        border: none !important;
+        padding: 0 !important;
+        font-weight: normal !important;
+    }
+
+
+    .values-diff {
+        max-width: 200px;
+        word-wrap: break-word;
+    }
+
+    .old-value {
+        color: #dc2626;
+        text-decoration: line-through;
+        background: #fef2f2;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        margin-right: 0.25rem;
+    }
+
+    .new-value {
+        color: #16a34a;
+        background: #f0fdf4;
+        padding: 0.125rem 0.25rem;
+        border-radius: 0.25rem;
+        margin-left: 0.25rem;
+    }
+
+    /* SYNC STYLES */
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+    .sync-status.syncing {
+        background: #f0f9ff;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+
+    .sync-status.success {
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+
+    .sync-status.error {
+        background: #fef2f2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -5px;
+    left: 0px;   /* 👈 moved to left */
+    right: auto;  /* 👈 disable right positioning */
+}
+
+    .sidebar-menu-item {
+        position: relative;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- ... existing content ... -->
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <NavLink href="/admin-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </NavLink>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/students" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </NavLink>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </NavLink>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/subjects" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </NavLink>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/enrollment-approvals" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Enrollment Approvals</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/payments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </NavLink>
+                </li>               
+                <li class="sidebar-menu-item">
+                    <NavLink href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </NavLink>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/audit-logs" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </NavLink>
+                </li>
+                <!-- ✅ SYNC TO CLOUD MENU ITEM -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="audit-header">
+            <h1>Audit Logs</h1>
+            <p>View and track all system activities and changes</p>
+        </div>
+
+        <div class="controls-bar">
+            <input type="text" placeholder="Search by action, table name, user, email, or values..." @bind="searchTerm"
+                   @bind:event="oninput" @onkeyup="HandleSearch" />
+
+            <div class="filter-group">
+                <label>Table Name:</label>
+                <select value="@filterTableName" @onchange="HandleFilterChange">
+                    <option value="">All Tables</option>
+                    <option value="Students">Students</option>
+                    <option value="Teachers">Teachers</option>
+                    <option value="Subjects">Subjects</option>
+                    <option value="Enrollments">Enrollments</option>
+                    <option value="Grades">Grades</option>
+                    <option value="Payments">Payments</option>
+                    <option value="UserAccounts">User Accounts</option>
+                </select>
+            </div>
+
+            <button class="btn btn-secondary" @onclick="ClearFilters">Clear Filters</button>
+            <button class="btn btn-primary" @onclick="RefreshLogs">Refresh</button>
+        </div>
+
+        <div class="audit-table-card">
+            <div class="table-header">
+                <h2>Activity Log</h2>
+                <span class="badge">@totalCount Total Entries</span>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="loading">
+                    <p>Loading audit logs...</p>
+                </div>
+            }
+            else if (auditLogs == null || !auditLogs.Any())
+            {
+                <div class="no-data">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         style="margin: 0 auto 1rem; opacity: 0.3;">
+                        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p>No audit logs found</p>
+                </div>
+            }
+            else
+            {
+                <table class="audit-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Username</th>
+                            <th>Action</th>
+                            <th>Table Name</th>
+                            <th>Old Values</th>
+                            <th>New Values</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in auditLogs)
+                        {
+                            <tr>
+                                <td>@log.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(log.UserDisplayName) && log.UserDisplayName != "Admin")
+                                    {
+                                        <span class="user-badge">@log.UserDisplayName</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Admin</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="action-badge @GetActionBadgeClass(log.Action)">@log.Action</span>
+                                </td>
+                                <td>@log.TableName</td>
+                                <td class="values-diff">@FormatJsonValues(log.OldValues, true)</td>
+                                <td class="values-diff">@FormatJsonValues(log.NewValues, false)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="pagination">
+                    <div class="pagination-info">
+                        Showing @Math.Min(currentPage * pageSize - pageSize + 1, totalCount) - @Math.Min(currentPage *
+                                            pageSize, totalCount) of @totalCount entries
+                </div>
+                <div class="pagination-controls">
+                    <button class="btn btn-secondary" @onclick="PreviousPage"
+                            disabled="@(currentPage <= 1)">
+                        Previous
+                    </button>
+                    <button class="btn btn-secondary" @onclick="NextPage"
+                            disabled="@(currentPage* pageSize >= totalCount)">
+                        Next
+                    </button>
+                </div>
+            </div>
+                        }
+        </div>
+    </div>
+</div>
+
+<ConfirmationDialog IsVisible="showLogoutConfirmation" Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your account."
+                    ConfirmText="Log Out" ProcessingText="Logging out..." Type="@ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut" OnConfirm="ConfirmLogout" OnCancel="HideLogoutConfirmation" />
+
+@code {
+    private List<AuditLog> auditLogs = new();
+    private bool isLoading = true;
+    private string searchTerm = string.Empty;
+    private string filterTableName = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCount = 0;
+    private string userName = string.Empty;
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+    private bool isSyncing = false;
+    private string syncMessage = "";
+    private string syncStatusClass = "";
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Check if user is authenticated and is admin
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userName = user.Identity.Name ?? "Admin";
+                var role = user.FindFirst("Role")?.Value;
+                if (role == "admin")
+                {
+                    await LoadAuditLogsAsync();
+                    
+                    // Start periodic sync status updates
+                    await LoadPendingSyncCount();
+                    syncStatusTimer = new System.Threading.Timer(async _ =>
+                    {
+                        await LoadPendingSyncCount();
+                        await InvokeAsync(StateHasChanged);
+                    }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OnInitializedAsync: {ex.Message}");
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadAuditLogsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                auditLogs = await AuditLogService.SearchLogsAsync(searchTerm);
+            }
+            else if (!string.IsNullOrWhiteSpace(filterTableName))
+            {
+                auditLogs = await AuditLogService.GetLogsByTableNameAsync(filterTableName);
+            }
+            else
+            {
+                auditLogs = await AuditLogService.GetLogsAsync((currentPage - 1) * pageSize, pageSize);
+            }
+
+            totalCount = await AuditLogService.GetTotalCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading audit logs: {ex.Message}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            // If database table doesn't exist, show empty list
+            auditLogs = new List<AuditLog>();
+            totalCount = 0;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleSearch()
+    {
+        currentPage = 1;
+        await LoadAuditLogsAsync();
+    }
+
+    private async Task HandleFilter()
+    {
+        currentPage = 1;
+        await LoadAuditLogsAsync();
+    }
+
+    private async Task HandleFilterChange(ChangeEventArgs e)
+    {
+        filterTableName = e.Value?.ToString() ?? string.Empty;
+        await HandleFilter();
+    }
+
+    private async Task ClearFilters()
+    {
+        searchTerm = string.Empty;
+        filterTableName = string.Empty;
+        currentPage = 1;
+        await LoadAuditLogsAsync();
+    }
+
+    private async Task RefreshLogs()
+    {
+        await LoadAuditLogsAsync();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadAuditLogsAsync();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (currentPage * pageSize < totalCount)
+        {
+            currentPage++;
+            await LoadAuditLogsAsync();
+        }
+    }
+
+    private string GetActionBadgeClass(string action)
+    {
+        var lowerAction = action.ToLower();
+        if (lowerAction.Contains("create") || lowerAction.Contains("add"))
+            return "action-create";
+        if (lowerAction.Contains("update") || lowerAction.Contains("edit") || lowerAction.Contains("modify"))
+            return "action-update";
+        if (lowerAction.Contains("delete") || lowerAction.Contains("remove"))
+            return "action-delete";
+        if (lowerAction.Contains("login") || lowerAction.Contains("signin"))
+            return "action-login";
+        if (lowerAction.Contains("logout") || lowerAction.Contains("signout"))
+            return "action-logout";
+        return "action-other";
+    }
+
+    private MarkupString FormatJsonValues(string? jsonValues, bool isOldValues)
+    {
+        if (string.IsNullOrEmpty(jsonValues))
+            return (MarkupString)"-";
+
+        try
+        {
+            // Try to parse as JSON
+            using var doc = System.Text.Json.JsonDocument.Parse(jsonValues);
+            var root = doc.RootElement;
+
+            // If it's a simple string, just return it
+            if (root.ValueKind == System.Text.Json.JsonValueKind.String)
+            {
+                var value = root.GetString() ?? "-";
+                if (isOldValues)
+                {
+                    return (MarkupString)$"<span class='old-value'>{value}</span>";
+                }
+                else
+                {
+                    return (MarkupString)$"<span class='new-value'>{value}</span>";
+                }
+            }
+
+            // If it's a JSON object, extract key values
+            if (root.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var values = new List<string>();
+
+                foreach (var property in root.EnumerateObject())
+                {
+                    var value = property.Value.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? property.Value.GetString()
+                    : property.Value.ToString();
+
+                    // Skip null or empty values, and skip IDs
+                    if (!string.IsNullOrEmpty(value) &&
+                    !property.Name.EndsWith("Id", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var formattedValue = isOldValues
+                            ? $"<span class='old-value'>{property.Name}: {value}</span>"
+                            : $"<span class='new-value'>{property.Name}: {value}</span>";
+                        values.Add(formattedValue);
+                    }
+                }
+
+                return values.Any() ? (MarkupString)string.Join("<br/>", values) : (MarkupString)"-";
+            }
+        }
+        catch
+        {
+            // If JSON parsing fails, return the raw string (truncated if too long)
+            var displayValue = jsonValues.Length > 100 ? jsonValues.Substring(0, 100) + "..." : jsonValues;
+            if (isOldValues)
+            {
+                return (MarkupString)$"<span class='old-value'>{displayValue}</span>";
+            }
+            else
+            {
+                return (MarkupString)$"<span class='new-value'>{displayValue}</span>";
+            }
+        }
+
+        return (MarkupString)jsonValues;
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutConfirmation = false;
+        isLoggingOut = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            // Try to use proper logout if available
+            if (AuthStateProvider is AuthStateProvider authProvider && authProvider.GetType().GetMethod("LogoutAsync") != null)
+            {
+                await ((dynamic)AuthStateProvider).LogoutAsync();
+            }
+            else
+            {
+                AuthStateProvider.MarkUserAsLoggedOut();
+            }
+
+            Navigation.NavigateTo("/", true);
+        }
+        catch
+        {
+            // Fallback to simple logout
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+                
+                await LoadPendingSyncCount();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = "";
+                syncStatusClass = "";
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+}

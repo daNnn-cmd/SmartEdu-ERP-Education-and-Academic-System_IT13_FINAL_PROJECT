@@ -1,0 +1,1193 @@
+﻿@page "/payments/details/{PaymentId:int}"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject PaymentService PaymentService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthStateProvider AuthStateProvider
+@inject AuditLogService AuditLogService
+@inject IBidirectionalSyncService BidirectionalSyncService
+@inject IGlobalSyncService GlobalSyncService
+@inject IToastService ToastService
+
+<PageTitle>Payment Details - SmartEduERP</PageTitle>
+
+<style>
+
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .back-button, .edit-button, .print-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+        background: white;
+        color: #404040;
+    }
+
+        .back-button:hover, .edit-button:hover, .print-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .edit-button {
+        background: #000;
+        color: white;
+        border-color: #000;
+    }
+
+        .edit-button:hover {
+            background: #404040;
+            border-color: #404040;
+        }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .payment-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .payment-status {
+        padding: 0.5rem 0;
+        border-radius: 0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: transparent !important;
+    }
+
+        .payment-status.paid {
+            color: #166534;
+            border: none;
+        }
+
+        .payment-status.pending {
+            color: #92400e;
+            border: none;
+        }
+
+        .payment-status.failed {
+            color: #dc2626;
+            border: none;
+        }
+
+    /* Method Badge - remove blue background */
+    .method-badge {
+        padding: 0;
+        border-radius: 0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: transparent !important;
+        color: #000 !important;
+        border: none;
+    }
+
+    /* Detail value styling */
+    .detail-value {
+        font-size: 0.875rem;
+        color: #000;
+        font-weight: 500;
+        text-align: right;
+    }
+
+    .amount-value {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        font-family: 'Courier New', monospace;
+    }
+
+    /* Update content card styling */
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .detail-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+    .detail-label {
+        font-size: 0.875rem;
+        color: #737373;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-size: 0.875rem;
+        color: #000;
+        font-weight: 500;
+        text-align: right;
+    }
+
+    .amount-value {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        font-family: 'Courier New', monospace;
+    }
+
+    .method-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .error-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #737373;
+    }
+
+    .error-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #dc2626;
+    }
+
+    .deleted-notice {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .deleted-notice-icon {
+        color: #dc2626;
+        margin-right: 0.5rem;
+    }
+
+    .deleted-notice-text {
+        color: #dc2626;
+        font-weight: 500;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Logout Confirmation Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-icon {
+        width: 40px;
+        height: 40px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+    }
+
+    .modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-body {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-text {
+        font-size: 0.875rem;
+        color: #737373;
+        line-height: 1.5;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .modal-button-cancel {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .modal-button-cancel:hover {
+            background: #f5f5f5;
+        }
+
+    .modal-button-confirm {
+        background: #000;
+        color: white;
+    }
+
+        .modal-button-confirm:hover {
+            background: #262626;
+        }
+
+    /* SYNC STYLES */
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+        .sync-status.syncing {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -5px;
+    left: 0px;   /* moved to left */
+    right: auto;  /* disable right positioning */
+}
+    .sidebar-menu-item {
+        position: relative;
+    }
+
+    /* PRINT STYLES - Hide sidebar and buttons when printing */
+    @@media print {
+        .sidebar {
+            display: none !important;
+        }
+
+        .header-actions {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .dashboard-wrapper {
+            display: block !important;
+            background: white !important;
+        }
+
+        .content-card {
+            box-shadow: none !important;
+            border: 1px solid #000 !important;
+        }
+
+        .page-header {
+            margin-bottom: 1rem !important;
+        }
+
+            .page-header h1 {
+                font-size: 1.5rem !important;
+            }
+
+            .page-header p {
+                display: none !important;
+            }
+    }
+
+
+
+</style>
+
+<div class="dashboard-wrapper">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/admin-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/subjects" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/enrollment-approvals" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Enrollment Approvals</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+               
+               
+                
+                <li class="sidebar-menu-item">
+                    <a href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/audit-logs" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </NavLink>
+                </li>
+                
+
+                <!-- SYNC TO CLOUD MENU ITEM -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>Payment Details</h1>
+                <p>View detailed information about this payment transaction</p>
+            </div>
+            <div class="header-actions">
+                <button class="back-button" @onclick="GoBack">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                    </svg>
+                    <span>Back to Payments</span>
+                </button>
+                @if (payment != null && !payment.IsDeleted)
+                {
+                    
+                }
+                <button class="print-button" @onclick="PrintDetails">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                        <path d="M6 14h12v8H6z"></path>
+                    </svg>
+                    <span>Print</span>
+                </button>
+            </div>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else if (payment == null)
+        {
+            <div class="error-state">
+                <div class="error-state-icon">❌</div>
+                <h3>Payment Not Found</h3>
+                <p>The payment you're looking for doesn't exist or you don't have permission to view it.</p>
+                <button class="back-button" @onclick="GoBack">
+                    <span>Back to Payments</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="content-card">
+                <div class="content-card-header">
+                    <div class="payment-header">
+                        <h2 class="payment-title">Payment #@payment.PaymentId</h2>
+                        <span class="payment-status @GetStatusClass(payment.PaymentStatus)">
+                            @payment.PaymentStatus
+                        </span>
+                    </div>
+                </div>
+
+                <div class="content-card-body">
+                    @if (payment.IsDeleted)
+                    {
+                        <div class="deleted-notice">
+                            <svg class="deleted-notice-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            <span class="deleted-notice-text">This payment has been deleted on @payment.DeletedAt?.ToString("MMMM dd, yyyy")</span>
+                        </div>
+                    }
+
+                    <div class="details-grid">
+                        <!-- Payment Information -->
+                        <div class="detail-section">
+                            <h3 class="section-title">Payment Information</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment ID</span>
+                                <span class="detail-value">#@payment.PaymentId</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Amount</span>
+                                <span class="detail-value amount-value">₱@payment.Amount.ToString("N2")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment Date</span>
+                                <span class="detail-value">@payment.PaymentDate.ToString("MMMM dd, yyyy")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment Method</span>
+                                <span class="detail-value">
+                                    <span class="method-badge">@payment.PaymentMethod</span>
+                                </span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Status</span>
+                                <span class="detail-value">
+                                    <span class="payment-status @GetStatusClass(payment.PaymentStatus)">
+                                        @payment.PaymentStatus
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Student Information -->
+                        <div class="detail-section">
+                            <h3 class="section-title">Student Information</h3>
+                            @if (payment.Student != null)
+                            {
+                                <div class="detail-item">
+                                    <span class="detail-label">Student ID</span>
+                                    <span class="detail-value">@payment.Student.StudentId</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Full Name</span>
+                                    <span class="detail-value">@payment.Student.FirstName @payment.Student.LastName</span>
+                                </div>
+
+                            }
+                            else
+                            {
+                                <div class="detail-item">
+                                    <span class="detail-label">Student</span>
+                                    <span class="detail-value" style="color: #737373;">Student information not available</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- System Information -->
+                        <div class="detail-section">
+                            <h3 class="section-title">System Information</h3>
+                            <div class="detail-item">
+                                <span class="detail-label">Created Date</span>
+                                <span class="detail-value">@payment.CreatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Processed By</span>
+                                <span class="detail-value">@(!string.IsNullOrEmpty(processedByDisplay) ? processedByDisplay : "Unknown")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Processed At</span>
+                                <span class="detail-value">@(processedAt.HasValue ? processedAt.Value.ToLocalTime().ToString("MMMM dd, yyyy 'at' hh:mm tt") : "N/A")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Last Updated</span>
+                                <span class="detail-value">@payment.UpdatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Record Status</span>
+                                <span class="detail-value">
+                                    @if (payment.IsDeleted)
+                                    {
+                                        <span style="color: #dc2626; font-weight: 500;">Deleted</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color: #16a34a; font-weight: 500;">Active</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (showLogoutModal)
+{
+    <div class="modal-overlay" @onclick="HideLogoutConfirmation">
+        <div class="modal-content" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <h3 class="modal-title">Confirm Logout</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-text">Are you sure you want to log out? You will need to sign in again to access your account.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-button modal-button-cancel" @onclick="HideLogoutConfirmation">
+                    Cancel
+                </button>
+                <button class="modal-button modal-button-confirm" @onclick="ConfirmLogout">
+                    Log Out
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int PaymentId { get; set; }
+
+    private Payment? payment;
+    private bool loading = true;
+    private bool showLogoutModal = false;
+    private string userName = "";
+    private string processedByDisplay = "";
+    private DateTime? processedAt;
+
+    // SYNC PROPERTIES
+    private bool isSyncing = false;
+    private string syncMessage = "";
+    private string syncStatusClass = "";
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Admin";
+        await LoadPaymentDetails();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadPaymentDetails();
+    }
+
+    private async Task LoadPaymentDetails()
+    {
+        loading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Get current user ID for audit logging
+            var currentUserId = await GetCurrentUserId();
+
+            // Use the new method that automatically logs the view action
+            payment = await PaymentService.GetPaymentWithAuditLogAsync(PaymentId, currentUserId);
+
+            // Load audit logs to determine who processed this payment
+            try
+            {
+                var logs = await AuditLogService.GetLogsForRecordAsync("Payments", PaymentId);
+
+                // Prefer the earliest log that has a real user linked
+                var firstWithUser = logs
+                    .Where(l => l.UserId.HasValue)
+                    .OrderBy(l => l.CreatedAt)
+                    .FirstOrDefault();
+
+                // Fallback to the original create log, then any log
+                var createLog = logs
+                    .Where(l => l.Action.Equals("Create", StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(l => l.CreatedAt)
+                    .FirstOrDefault();
+
+                var sourceLog = firstWithUser
+                    ?? createLog
+                    ?? logs.OrderBy(l => l.CreatedAt).FirstOrDefault();
+
+                if (sourceLog != null)
+                {
+                    processedByDisplay = sourceLog.UserDisplayName ?? (sourceLog.Username ?? "System");
+                    processedAt = sourceLog.CreatedAt;
+                }
+                else
+                {
+                    processedByDisplay = "";
+                    processedAt = null;
+                }
+            }
+            catch (Exception logEx)
+            {
+                Console.WriteLine($"Error loading payment audit logs: {logEx.Message}");
+                processedByDisplay = "";
+                processedAt = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error
+            Console.WriteLine($"Error loading payment details: {ex.Message}");
+        }
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private Task<int?> GetCurrentUserId()
+    {
+        try
+        {
+            var userId = AuthStateProvider.GetCurrentUserId();
+            return Task.FromResult<int?>(userId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting current user ID: {ex.Message}");
+            return Task.FromResult<int?>(null);
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/payments");
+    }
+
+    private async Task PrintDetails()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private string GetStatusClass(string? status)
+    {
+        return status?.ToLower() switch
+        {
+            "paid" => "paid",
+            "pending" => "pending",
+            "failed" => "failed",
+            _ => "pending"
+        };
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutModal = true;
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutModal = false;
+    }
+
+    private void ConfirmLogout()
+    {
+        AuthStateProvider.MarkUserAsLoggedOut();
+        Navigation.NavigateTo("/", true);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadPendingSyncCount();
+            syncStatusTimer = new System.Threading.Timer(async _ =>
+            {
+                await LoadPendingSyncCount();
+                await InvokeAsync(StateHasChanged);
+            }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+        }
+    }
+
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+                
+                await LoadPendingSyncCount();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = "";
+                syncStatusClass = "";
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+}

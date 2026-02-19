@@ -1,0 +1,60 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits ComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+
+@if (isAuthorized)
+{
+    @ChildContent
+}
+else if (isChecking)
+{
+    <div class="container mt-5 text-center">
+        <div class="spinner-border text-primary"></div>
+        <p>Checking authorization...</p>
+    </div>
+}
+else
+{
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h4>Access Denied</h4>
+            <p>You do not have permission to view this page.</p>
+            <a href="/login" class="btn btn-primary">Login</a>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? RequiredRole { get; set; }
+    
+    private bool isAuthorized = false;
+    private bool isChecking = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            if (string.IsNullOrEmpty(RequiredRole) || user.IsInRole(RequiredRole))
+            {
+                isAuthorized = true;
+            }
+            else
+            {
+                isAuthorized = false;
+            }
+        }
+        else
+        {
+            // Not logged in - redirect to login
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        isChecking = false;
+    }
+}

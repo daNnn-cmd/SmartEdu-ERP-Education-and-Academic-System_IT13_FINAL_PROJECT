@@ -1,0 +1,877 @@
+@page "/enrollments"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject EnrollmentService EnrollmentService
+@inject AuthStateProvider AuthStateProvider
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>My Enrollments - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .header-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .create-button {
+        background: #000;
+        color: white;
+        border: none;
+        padding: 0.625rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+        .create-button:hover {
+            background: #404040;
+            color: white;
+            text-decoration: none;
+        }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .content-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .enrollments-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .enrollments-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #737373;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fafafa;
+            white-space: nowrap;
+        }
+
+        .enrollments-table td {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f5f5f5;
+            vertical-align: top;
+        }
+
+        .enrollments-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .enrollments-table tr:hover {
+            background: #fafafa;
+        }
+
+    .enrollment-status {
+        padding: 0;
+        border-radius: 0;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+        .enrollment-status.pending {
+            background: transparent;
+            color: #92400e;
+        }
+
+        .enrollment-status.approved {
+            background: transparent;
+            color: #166534;
+        }
+
+        .enrollment-status.rejected {
+            background: transparent;
+            color: #991b1b;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0;
+        }
+
+        .modal-body {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .modal-button {
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .modal-button-cancel {
+            background: white;
+            color: #404040;
+            border: 1px solid #e5e5e5;
+        }
+
+            .modal-button-cancel:hover {
+                background: #f5f5f5;
+            }
+
+        .modal-button-confirm {
+            background: #000;
+            color: white;
+        }
+
+            .modal-button-confirm:hover {
+                background: #262626;
+            }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #737373;
+            margin-bottom: 0.375rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.625rem;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            box-sizing: border-box;
+        }
+
+            .form-input:focus {
+                outline: none;
+                border-color: #000;
+            }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .action-button {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: white;
+        color: #404040;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+        .action-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+            text-decoration: none;
+            color: #404040;
+        }
+
+        .action-button.edit {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+            .action-button.edit:hover {
+                background: #2563eb;
+                color: white;
+            }
+
+        .action-button.delete {
+            border-color: #dc2626;
+            color: #dc2626;
+        }
+
+            .action-button.delete:hover {
+                background: #dc2626;
+                color: white;
+            }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #737373;
+    }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: #e5e5e5;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #404040;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            margin: 0 0 1.5rem 0;
+        }
+
+    .text-muted {
+        color: #737373;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-wrapper {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Student Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/student-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/enrollments" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>My Enrollments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/viewgrades" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>My Grades</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item">
+                    <a href="/students/payment" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item">
+                    <a href="students/schedule" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Class Schedule</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="students/profile" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Student</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>My Enrollments</h1>
+            <p>Manage and view all your course enrollments.</p>
+        </div>
+
+        <div class="header-actions">
+            <a href="/enrollments/create" class="create-button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Create Enrollment
+            </a>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">Enrollment Records</h3>
+                </div>
+                <div class="content-card-body">
+                    @if (enrollments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="enrollments-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Subject</th>
+                                        <th>Academic Year</th>
+                                        <th>Semester</th>
+                                        <th>Status</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var enrollment in enrollments)
+                                    {
+                                        <tr>
+                                            <td>@(enrollment.Student != null ? $"{enrollment.Student.FirstName} {enrollment.Student.LastName}" : "-")</td>
+                                            <td>@(enrollment.Subject != null ? $"{enrollment.Subject.SubjectCode} - {enrollment.Subject.SubjectName}" : "-")</td>
+                                            <td>@enrollment.AcademicYear</td>
+                                            <td>@enrollment.Semester</td>
+                                            <td>
+                                                <span class="enrollment-status @GetEnrollmentStatusClass(enrollment.EnrollmentStatus)">@GetEnrollmentStatusText(enrollment.EnrollmentStatus)</span>
+                                            </td>
+                                            <td>@enrollment.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    @if (IsPending(enrollment.EnrollmentStatus))
+                                                    {
+                                                        <a href="/enrollments/edit/@enrollment.EnrollmentId" class="action-button edit">
+                                                            Edit
+                                                        </a>
+                                                        <button class="action-button delete" @onclick="() => ShowDeleteConfirmation(enrollment.EnrollmentId)">
+                                                            Delete
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                            <h3>No Enrollments Found</h3>
+                            <p>You haven't enrolled in any courses yet. Start by creating your first enrollment.</p>
+                           
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Logout Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+<!-- Delete Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showDeleteConfirmation"
+                    Title="Delete Enrollment"
+                    Message="Are you sure you want to delete this enrollment? This action cannot be undone."
+                    ConfirmText="Delete"
+                    ProcessingText="Deleting..."
+                    Type="ConfirmationDialog.ConfirmationType.Delete"
+                    IsProcessing="isDeleting"
+                    OnConfirm="ConfirmDelete"
+                    OnCancel="CancelDelete" />
+
+@code {
+    private List<Enrollment> enrollments = new();
+    private bool loading = true;
+    private string userName = "";
+
+    // Logout confirmation
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+
+    // Delete confirmation
+    private bool showDeleteConfirmation = false;
+    private bool isDeleting = false;
+    private int enrollmentIdToDelete;
+
+    private bool isStudent = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Student";
+        var role = AuthStateProvider.GetCurrentUserRole();
+        var isAdmin = !string.IsNullOrEmpty(role) && role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        isStudent = !string.IsNullOrEmpty(role) && role.Equals("Student", StringComparison.OrdinalIgnoreCase);
+
+        if (isAdmin)
+        {
+            Navigation.NavigateTo("/admin/enrollment-approvals");
+            return;
+        }
+
+        await LoadEnrollments();
+    }
+
+    private static bool IsPending(string? status) => string.IsNullOrWhiteSpace(status) || status.Equals("Pending", StringComparison.OrdinalIgnoreCase);
+
+    private static string GetEnrollmentStatusText(string? status) => string.IsNullOrWhiteSpace(status) ? "Pending" : status;
+
+    private static string GetEnrollmentStatusClass(string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status)) return "pending";
+        return status.ToLower() switch
+        {
+            "approved" => "approved",
+            "pending" => "pending",
+            "rejected" => "rejected",
+            _ => "pending"
+        };
+    }
+
+    private async Task LoadEnrollments()
+    {
+        loading = true;
+        StateHasChanged();
+
+        var role = AuthStateProvider.GetCurrentUserRole();
+        var userId = AuthStateProvider.GetCurrentUserId();
+
+        if (isStudent && userId.HasValue)
+        {
+            var user = await AuthService.GetUserByIdAsync(userId.Value);
+            var studentId = user?.ReferenceId ?? 0;
+            enrollments = studentId > 0
+                ? await EnrollmentService.GetEnrollmentsByStudentIdAsync(studentId)
+                : new List<Enrollment>();
+        }
+        else
+        {
+            enrollments = new List<Enrollment>();
+        }
+
+        enrollments = enrollments
+            .OrderByDescending(e => e.CreatedAt)
+            .ToList();
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private void ShowDeleteConfirmation(int id)
+    {
+        enrollmentIdToDelete = id;
+        showDeleteConfirmation = true;
+    }
+
+    private async Task ConfirmDelete()
+    {
+        isDeleting = true;
+        StateHasChanged();
+
+        if (await EnrollmentService.SoftDeleteEnrollmentAsync(enrollmentIdToDelete))
+        {
+            await LoadEnrollments();
+        }
+
+        isDeleting = false;
+        showDeleteConfirmation = false;
+        StateHasChanged();
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteConfirmation = false;
+        enrollmentIdToDelete = 0;
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            // Fallback to simple logout
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+}

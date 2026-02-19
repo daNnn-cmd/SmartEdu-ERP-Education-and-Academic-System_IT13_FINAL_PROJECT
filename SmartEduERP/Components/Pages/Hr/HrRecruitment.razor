@@ -1,0 +1,424 @@
+@page "/hr/recruitment"
+@using System.Linq
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using SmartEduERP.Components.Pages.Hr
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,HR")]
+@inject HrService HrService
+
+<PageTitle>HR - Recruitment</PageTitle>
+
+<style>
+    .hr-page { padding: 1.5rem; }
+    .hr-title { font-size: 1.6rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .hr-subtitle { font-size: 0.95rem; color: #6b7280; margin-bottom: 1.25rem; }
+    .hr-card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.25rem; margin-bottom: 1rem; }
+    .hr-grid-2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 1rem; }
+    .hr-label { font-size: 0.8rem; font-weight: 500; color: #4b5563; margin-bottom: 0.2rem; }
+    .hr-input, .hr-textarea, .hr-select { width: 100%; border-radius: 6px; border: 1px solid #d1d5db; padding: 0.45rem 0.6rem; font-size: 0.85rem; }
+    .hr-textarea { min-height: 80px; }
+    .hr-btn-primary { border-radius: 8px; border: none; padding: 0.45rem 0.9rem; background: #2563eb; color: #fff; font-size: 0.85rem; cursor: pointer; }
+    .hr-btn-small { border-radius: 999px; border: 1px solid #d1d5db; padding: 0.2rem 0.65rem; background: #fff; font-size: 0.75rem; cursor: pointer; }
+    .hr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .hr-table th { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e5e5; font-weight: 500; color: #6b7280; background: #f9fafb; }
+    .hr-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #f3f4f6; }
+    .hr-badge-status { font-size: inherit; padding: 0; border-radius: 0; font-weight: inherit; background: transparent; color: inherit; }
+    .hr-badge-new { background: transparent; color: inherit; }
+    .hr-badge-shortlisted { background: transparent; color: inherit; }
+    .hr-badge-hired { background: transparent; color: inherit; }
+    .hr-badge-rejected { background: transparent; color: inherit; }
+    .hr-table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem; }
+    .hr-pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1rem; }
+    .hr-pagination-button { border-radius: 6px; border: 1px solid #d1d5db; padding: 0.35rem 0.7rem; background: #fff; font-size: 0.8rem; cursor: pointer; }
+    .hr-pagination-button.active { background: #111827; color: #fff; border-color: #111827; }
+    .hr-pagination-button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hr-pagination-info { font-size: 0.8rem; color: #6b7280; margin: 0 0.75rem; }
+    .hr-page-size-select { width: auto; min-width: 120px; }
+    @@media (max-width: 900px) { .hr-grid-2 { grid-template-columns: minmax(0, 1fr); } }
+</style>
+
+<HrLayout>
+<div class="hr-page">
+    <div class="hr-title">Recruitment</div>
+    <div class="hr-subtitle">Manage job postings and a simple list of applicants.</div>
+
+    <div class="hr-card">
+        <div style="font-weight:600; margin-bottom:0.5rem;">Job Posting</div>
+        @if (!string.IsNullOrEmpty(jobErrorMessage))
+        {
+            <div style="font-size:0.8rem;color:#b91c1c;margin-bottom:0.5rem;">@jobErrorMessage</div>
+        }
+        <div class="hr-grid-2">
+            <div>
+                <div class="hr-label">Title</div>
+                <input class="hr-input" @bind="newJob.Title" />
+                <div class="hr-label" style="margin-top:0.5rem;">Department</div>
+                <input class="hr-input" @bind="newJob.Department" />
+                <div class="hr-label" style="margin-top:0.5rem;">Employment Type</div>
+                <input class="hr-input" @bind="newJob.EmploymentType" placeholder="Full-time, Part-time, Contract" />
+                <div style="margin-top:0.75rem;">
+                    <button class="hr-btn-primary" @onclick="SaveJobPostingAsync">Save Job Post</button>
+                </div>
+            </div>
+            <div>
+                <div class="hr-label">Description</div>
+                <textarea class="hr-textarea" @bind="newJob.Description"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="hr-card">
+        <div class="hr-table-toolbar">
+            <div style="font-weight:600;">Job Postings (@jobTotalRecords)</div>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+                <span style="font-size:0.8rem;color:#6b7280;">Rows per page:</span>
+                <select class="hr-input hr-page-size-select" @bind="jobPageSize" @bind:after="OnJobPageSizeChanged">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+        @if (jobPostings.Any())
+        {
+            <table class="hr-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Department</th>
+                        <th>Type</th>
+                        <th>Posted</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var j in jobPostings)
+                    {
+                        <tr>
+                            <td>@j.Title</td>
+                            <td>@j.Department</td>
+                            <td>@j.EmploymentType</td>
+                            <td>@j.PostedDate.ToString("MMM dd, yyyy")</td>
+                            <td>@(j.IsActive ? "Open" : "Closed")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (jobTotalPages > 1)
+            {
+                <div class="hr-pagination">
+                    <button class="hr-pagination-button" @onclick="() => ChangeJobPage(jobCurrentPage - 1)" disabled="@(jobCurrentPage == 1)">
+                        Previous
+                    </button>
+
+                    <span class="hr-pagination-info">
+                        Page @jobCurrentPage of @jobTotalPages
+                    </span>
+
+                    @for (int i = Math.Max(1, jobCurrentPage - 2); i <= Math.Min(jobTotalPages, jobCurrentPage + 2); i++)
+                    {
+                        var pageNum = i;
+                        <button class="hr-pagination-button @(jobCurrentPage == pageNum ? "active" : "")" @onclick="() => ChangeJobPage(pageNum)">
+                            @pageNum
+                        </button>
+                    }
+
+                    <button class="hr-pagination-button" @onclick="() => ChangeJobPage(jobCurrentPage + 1)" disabled="@(jobCurrentPage == jobTotalPages)">
+                        Next
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="font-size:0.85rem;color:#6b7280;">No job postings yet.</div>
+        }
+    </div>
+
+    <div class="hr-card">
+        <div style="font-weight:600; margin-bottom:0.5rem;">Applicants (@applicantTotalRecords)</div>
+
+        <div class="hr-grid-2" style="margin-bottom:1rem;">
+            <div>
+                <div class="hr-label">Job Posting</div>
+                <select class="hr-select" @bind="newApplicant.JobPostingId">
+                    <option value="0">Select job post...</option>
+                    @foreach (var j in allJobPostings)
+                    {
+                        <option value="@j.JobPostingId">@j.Title (@j.Department)</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <div class="hr-label">Full Name</div>
+                <input class="hr-input" @bind="newApplicant.FullName" />
+            </div>
+            <div>
+                <div class="hr-label">Email</div>
+                <input class="hr-input" @bind="newApplicant.Email" />
+            </div>
+            <div>
+                <div class="hr-label">Phone</div>
+                <input class="hr-input" @bind="newApplicant.PhoneNumber" />
+            </div>
+            <div>
+                <div class="hr-label">Resume Path</div>
+                <input class="hr-input" @bind="newApplicant.ResumePath" />
+            </div>
+            <div>
+                <div class="hr-label">Notes</div>
+                <textarea class="hr-textarea" @bind="newApplicant.Notes"></textarea>
+            </div>
+        </div>
+
+        <button class="hr-btn-primary" @onclick="AddApplicantAsync">Add Applicant</button>
+
+        @if (!string.IsNullOrEmpty(applicantErrorMessage))
+        {
+            <div style="margin-top:0.5rem;font-size:0.8rem;color:#b91c1c;">@applicantErrorMessage</div>
+        }
+
+        <div style="margin-top:1rem;">
+            <div class="hr-table-toolbar">
+                <div style="font-weight:500;">Applicant List</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:0.8rem;color:#6b7280;">Rows per page:</span>
+                    <select class="hr-input hr-page-size-select" @bind="applicantPageSize" @bind:after="OnApplicantPageSizeChanged">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+
+            @if (applicants.Any())
+            {
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Job</th>
+                            <th>Applied</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in applicants)
+                        {
+                            <tr>
+                                <td>@a.FullName</td>
+                                <td>@(a.JobPosting != null ? a.JobPosting.Title : "-")</td>
+                                <td>@a.AppliedDate.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <span class="hr-badge-status @GetApplicantStatusClass(a.Status)">@a.Status</span>
+                                </td>
+                                <td>
+                                    <button class="hr-btn-small" @onclick='() => UpdateStatus(a.ApplicantId, "Shortlisted")' disabled="@IsFinalStatus(a.Status)">Shortlist</button>
+                                    <button class="hr-btn-small" @onclick='() => UpdateStatus(a.ApplicantId, "Hired")' disabled="@IsFinalStatus(a.Status)">Hire</button>
+                                    <button class="hr-btn-small" @onclick='() => UpdateStatus(a.ApplicantId, "Rejected")' disabled="@IsFinalStatus(a.Status)">Reject</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @if (applicantTotalPages > 1)
+                {
+                    <div class="hr-pagination">
+                        <button class="hr-pagination-button" @onclick="() => ChangeApplicantPage(applicantCurrentPage - 1)" disabled="@(applicantCurrentPage == 1)">
+                            Previous
+                        </button>
+
+                        <span class="hr-pagination-info">
+                            Page @applicantCurrentPage of @applicantTotalPages
+                        </span>
+
+                        @for (int i = Math.Max(1, applicantCurrentPage - 2); i <= Math.Min(applicantTotalPages, applicantCurrentPage + 2); i++)
+                        {
+                            var pageNum = i;
+                            <button class="hr-pagination-button @(applicantCurrentPage == pageNum ? "active" : "")" @onclick="() => ChangeApplicantPage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+
+                        <button class="hr-pagination-button" @onclick="() => ChangeApplicantPage(applicantCurrentPage + 1)" disabled="@(applicantCurrentPage == applicantTotalPages)">
+                            Next
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="font-size:0.85rem;color:#6b7280;">No applicants yet.</div>
+            }
+        </div>
+    </div>
+</div>
+</HrLayout>
+
+@code {
+    private List<JobPosting> allJobPostings = new();
+    private List<JobPosting> jobPostings = new();
+    private List<Applicant> allApplicants = new();
+    private List<Applicant> applicants = new();
+
+    private JobPosting newJob = new();
+    private Applicant newApplicant = new();
+
+    private string? jobErrorMessage;
+    private string? applicantErrorMessage;
+
+    private int jobCurrentPage = 1;
+    private int jobPageSize = 10;
+    private int jobTotalRecords = 0;
+    private int jobTotalPages => (int)Math.Ceiling((double)jobTotalRecords / jobPageSize);
+
+    private int applicantCurrentPage = 1;
+    private int applicantPageSize = 10;
+    private int applicantTotalRecords = 0;
+    private int applicantTotalPages => (int)Math.Ceiling((double)applicantTotalRecords / applicantPageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        allJobPostings = await HrService.GetJobPostingsAsync();
+        jobTotalRecords = allJobPostings.Count;
+        jobCurrentPage = 1;
+        ApplyJobPagination();
+
+        allApplicants = await HrService.GetApplicantsAsync();
+        applicantTotalRecords = allApplicants.Count;
+        applicantCurrentPage = 1;
+        ApplyApplicantPagination();
+    }
+
+    private async Task SaveJobPostingAsync()
+    {
+        jobErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newJob.Title))
+        {
+            jobErrorMessage = "Job title is required.";
+            return;
+        }
+
+        await HrService.SaveJobPostingAsync(newJob);
+        newJob = new JobPosting();
+        await LoadDataAsync();
+    }
+
+    private async Task AddApplicantAsync()
+    {
+        applicantErrorMessage = null;
+
+        if (newApplicant.JobPostingId == 0)
+        {
+            applicantErrorMessage = "Please select a job posting.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newApplicant.FullName))
+        {
+            applicantErrorMessage = "Applicant full name is required.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(newApplicant.Email) && !newApplicant.Email.Contains("@"))
+        {
+            applicantErrorMessage = "Please enter a valid email address.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(newApplicant.PhoneNumber) && !newApplicant.PhoneNumber.All(char.IsDigit))
+        {
+            applicantErrorMessage = "Phone number can only contain digits.";
+            return;
+        }
+
+        await HrService.AddApplicantAsync(newApplicant);
+        newApplicant = new Applicant();
+        await LoadDataAsync();
+    }
+
+    private async Task UpdateStatus(int applicantId, string status)
+    {
+        await HrService.UpdateApplicantStatusAsync(applicantId, status);
+        await LoadDataAsync();
+    }
+
+    private string GetApplicantStatusClass(string status)
+    {
+        return status switch
+        {
+            "Shortlisted" => "hr-badge-shortlisted",
+            "Hired" => "hr-badge-hired",
+            "Rejected" => "hr-badge-rejected",
+            _ => "hr-badge-new"
+        };
+    }
+
+    private bool IsFinalStatus(string status)
+    {
+        return status == "Shortlisted" || status == "Hired" || status == "Rejected";
+    }
+
+    private void ApplyJobPagination()
+    {
+        jobPostings = allJobPostings
+            .Skip((jobCurrentPage - 1) * jobPageSize)
+            .Take(jobPageSize)
+            .ToList();
+    }
+
+    private void OnJobPageSizeChanged()
+    {
+        jobCurrentPage = 1;
+        ApplyJobPagination();
+    }
+
+    private void ChangeJobPage(int page)
+    {
+        if (page < 1 || page > jobTotalPages)
+        {
+            return;
+        }
+
+        jobCurrentPage = page;
+        ApplyJobPagination();
+    }
+
+    private void ApplyApplicantPagination()
+    {
+        applicants = allApplicants
+            .Skip((applicantCurrentPage - 1) * applicantPageSize)
+            .Take(applicantPageSize)
+            .ToList();
+    }
+
+    private void OnApplicantPageSizeChanged()
+    {
+        applicantCurrentPage = 1;
+        ApplyApplicantPagination();
+    }
+
+    private void ChangeApplicantPage(int page)
+    {
+        if (page < 1 || page > applicantTotalPages)
+        {
+            return;
+        }
+
+        applicantCurrentPage = page;
+        ApplyApplicantPagination();
+    }
+}

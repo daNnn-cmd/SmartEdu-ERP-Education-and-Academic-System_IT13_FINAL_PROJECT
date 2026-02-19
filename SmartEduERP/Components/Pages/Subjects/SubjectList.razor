@@ -1,0 +1,1853 @@
+@page "/subjects"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject SubjectService SubjectService
+@inject ExportService ExportService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthStateProvider AuthStateProvider
+@inject IToastService ToastService
+@inject IGlobalSyncService GlobalSyncService
+@inject IBidirectionalSyncService BidirectionalSyncService
+
+<PageTitle>Subjects - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+        position: relative;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .export-button, .add-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .export-button {
+        background: white;
+        color: #404040;
+    }
+
+        .export-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .export-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .add-button {
+        background: #000;
+        color: white;
+        border-color: #000;
+    }
+
+        .add-button:hover {
+            background: #404040;
+            border-color: #404040;
+        }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto auto;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        align-items: center;
+    }
+
+    .search-input, .filter-select, .page-size-select {
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+    }
+
+        .search-input:focus, .filter-select:focus, .page-size-select:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+    .filter-button {
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+        color: #404040;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .filter-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .filter-button.primary {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+            .filter-button.primary:hover {
+                background: #404040;
+                border-color: #404040;
+            }
+
+    .results-count {
+        font-size: 0.75rem;
+        color: #737373;
+        margin-bottom: 1rem;
+    }
+
+    .subjects-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .subjects-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #737373;
+            border-bottom: 1px solid #e5e5e5;
+            cursor: pointer;
+            user-select: none;
+        }
+
+            .subjects-table th:hover {
+                background: #f5f5f5;
+            }
+
+        .subjects-table td {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .subjects-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .subjects-table tr:hover {
+            background: #fafafa;
+        }
+
+    .subject-code {
+        font-weight: 600;
+        color: #000;
+        font-family: 'Courier New', monospace;
+    }
+
+    .subject-name {
+        font-weight: 500;
+        color: #000;
+    }
+
+    .units-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #dbeafe;
+        color: #1e40af;
+        white-space: nowrap;
+    }
+
+    .teacher-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .teacher-name {
+        font-weight: 500;
+        color: #000;
+    }
+
+    .teacher-department {
+        font-size: 0.75rem;
+        color: #737373;
+    }
+
+    .unassigned-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #f5f5f5;
+        color: #737373;
+        white-space: nowrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .action-button {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: white;
+        color: #404040;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+        .action-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .action-button.edit {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+            .action-button.edit:hover {
+                background: #3b82f6;
+                color: white;
+            }
+
+        .action-button.archive {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+            .action-button.archive:hover {
+                background: #f59e0b;
+                color: white;
+            }
+
+        .action-button.approve {
+            border-color: #16a34a;
+            color: #16a34a;
+        }
+
+            .action-button.approve:hover {
+                background: #16a34a;
+                color: white;
+            }
+
+        .action-button.note {
+            border-color: #9333ea;
+            color: #9333ea;
+        }
+
+            .action-button.note:hover {
+                background: #9333ea;
+                color: white;
+            }
+
+        .action-button.view {
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+            .action-button.view:hover {
+                background: #2563eb;
+                color: white;
+            }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .pagination-button {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: white;
+        color: #404040;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .pagination-button:hover:not(:disabled) {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-button.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+    .pagination-info {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0 1rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #737373;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Modal styles - updated to match reference */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .modal-body {
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .modal-button-cancel {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .modal-button-cancel:hover {
+            background: #f5f5f5;
+        }
+
+    .modal-button-confirm {
+        background: #000;
+        color: white;
+    }
+
+        .modal-button-confirm:hover {
+            background: #262626;
+        }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #737373;
+        font-size: 0.75rem;
+        margin-bottom: 0.375rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        box-sizing: border-box;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+    .grade-level-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #000;
+        white-space: nowrap;
+    }
+
+    .section-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        background: #dcfce7;
+        color: #166534;
+        white-space: nowrap;
+    }
+
+    /* Sync Status Styles */
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+        .sync-status.syncing {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+        background: #dc2626;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: -5px;
+        left: 0px;
+        right: auto;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/admin-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/subjects" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/enrollment-approvals" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Enrollment Approvals</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/audit-logs" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </a>
+                </li>
+                <!-- Sync to Cloud Button -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Academic Management</h1>
+            <p>Manage subjects, course offerings, and academic programs</p>
+            <div class="header-actions">
+                <button class="export-button" @onclick="ExportToExcel" disabled="@exporting">
+                    @if (exporting)
+                    {
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+                            <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                    }
+                    <span>Export Excel</span>
+                </button>
+                <button class="export-button" @onclick="ExportToPDF" disabled="@exporting">
+                    @if (exporting)
+                    {
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spinner">
+                            <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    }
+                    <span>Export PDF</span>
+                </button>
+                <a href="/subjects/create" class="add-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add New Subject</span>
+                </a>
+                <button class="export-button" @onclick="ShowYearArchiveConfirmation">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Archive School Year</span>
+                </button>
+            </div>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            <div class="content-card">
+                <div class="content-card-header">
+                    <div class="filters-grid">
+                        <input type="text"
+                               class="search-input"
+                               placeholder="Search by code, name, grade, or section..."
+                               @bind="searchTerm"
+                               @bind:event="oninput"
+                               @onkeyup="HandleSearch" />
+
+                        <select class="filter-select" @bind="gradeLevelFilter" @bind:after="ApplyFilters">
+                            <option value="">All Grades</option>
+                            <option value="Grade 11">Grade 11</option>
+                            <option value="Grade 12">Grade 12</option>
+                        </select>
+
+                        <select class="filter-select" @bind="sectionFilter" @bind:after="ApplyFilters">
+                            <option value="">All Sections</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                            <option value="D">Section D</option>
+                            <option value="E">Section E</option>
+                            <option value="F">Section F</option>
+                        </select>
+
+                        <select class="filter-select" @bind="academicYearFilter" @bind:after="ApplyFilters">
+                            <option value="">All School Years</option>
+                            @foreach (var year in academicYears)
+                            {
+                                <option value="@year">@year</option>
+                            }
+                        </select>
+
+                        <button class="filter-button primary" @onclick="ApplyFilters">
+                            Search
+                        </button>
+
+                        <button class="filter-button" @onclick="ClearFilters">
+                            Clear
+                        </button>
+
+                        <select class="page-size-select" @bind="pageSize" @bind:after="LoadSubjects">
+                            <option value="10">10 per page</option>
+                            <option value="25">25 per page</option>
+                            <option value="50">50 per page</option>
+                        </select>
+                    </div>
+
+                    <div class="results-count">
+                        Showing @filteredSubjects.Count of @totalRecords subjects
+                    </div>
+                </div>
+
+                <div class="content-card-body">
+                    @if (filteredSubjects.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="subjects-table">
+                                <thead>
+                                    <tr>
+                                        <th @onclick='() => SortBy("SubjectCode")'>
+                                            Code @GetSortIcon("SubjectCode")
+                                        </th>
+                                        <th @onclick='() => SortBy("SubjectName")'>
+                                            Name @GetSortIcon("SubjectName")
+                                        </th>
+                                        <th @onclick='() => SortBy("GradeLevel")'>
+                                            Grade Level @GetSortIcon("GradeLevel")
+                                        </th>
+                                        <th @onclick='() => SortBy("Section")'>
+                                            Section @GetSortIcon("Section")
+                                        </th>
+                                        <th @onclick='() => SortBy("AcademicYear")'>
+                                            School Year @GetSortIcon("AcademicYear")
+                                        </th>
+                                        <th>Status</th>
+                                        <th>Proposed By</th>
+                                        <th>Noted By</th>
+                                        <th>Approved By</th>
+                                        <th>Teacher</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var subject in filteredSubjects)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="subject-code">@subject.SubjectCode</span>
+                                            </td>
+                                            <td>
+                                                <span class="subject-name">@subject.SubjectName</span>
+                                            </td>
+                                            <td>@subject.GradeLevel</td>
+                                            <td>@subject.Section</td>
+                                            <td>@subject.AcademicYear</td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(subject.SubjectStatus))
+                                                {
+                                                    <span>@subject.SubjectStatus</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Proposed</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (subject.ProposedByUser != null)
+                                                {
+                                                    <span>@subject.ProposedByUser.FirstName @subject.ProposedByUser.LastName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(subject.NotedBy))
+                                                {
+                                                    <span>@subject.NotedBy</span>
+                                                }
+                                                else if (subject.NotedByUser != null)
+                                                {
+                                                    <span>@subject.NotedByUser.FirstName @subject.NotedByUser.LastName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrWhiteSpace(subject.ApprovedBy))
+                                                {
+                                                    <span>@subject.ApprovedBy</span>
+                                                }
+                                                else if (subject.ApprovedByUser != null)
+                                                {
+                                                    <span>@subject.ApprovedByUser.FirstName @subject.ApprovedByUser.LastName</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (subject.Teacher != null)
+                                                {
+                                                    <div class="teacher-info">
+                                                        <span class="teacher-name">@subject.Teacher.FirstName @subject.Teacher.LastName</span>
+                                                        <span class="teacher-department">@subject.Teacher.Department</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="unassigned-badge">Unassigned</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <a href="/subjects/edit/@subject.SubjectId" class="action-button edit">
+                                                        Edit
+                                                    </a>
+                                                    @if (isAdmin && string.Equals(subject.SubjectStatus, "Proposed", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <button class="action-button note" @onclick="() => ShowNoteModal(subject.SubjectId)">
+                                                            Note
+                                                        </button>
+                                                    }
+                                                    @if (isAdmin && string.Equals(subject.SubjectStatus, "Noted", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        <button class="action-button approve" @onclick="() => ShowApproveModal(subject.SubjectId)">
+                                                            Approve
+                                                        </button>
+                                                    }
+                                                    <button class="action-button archive"
+                                                            @onclick="() => ShowArchiveConfirmation(subject.SubjectId, subject.SubjectName)">
+                                                        Archive
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        @if (totalPages > 1)
+                        {
+                            <div class="pagination">
+                                <button class="pagination-button"
+                                        @onclick="() => ChangePage(currentPage - 1)"
+                                        disabled="@(currentPage == 1)">
+                                    Previous
+                                </button>
+
+                                <span class="pagination-info">
+                                    Page @currentPage of @totalPages
+                                </span>
+
+                                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                                {
+                                    var pageNum = i;
+                                    <button class="pagination-button @(currentPage == pageNum ? "active" : "")"
+                                            @onclick="() => ChangePage(pageNum)">
+                                        @pageNum
+                                    </button>
+                                }
+
+                                <button class="pagination-button"
+                                        @onclick="() => ChangePage(currentPage + 1)"
+                                        disabled="@(currentPage == totalPages)">
+                                    Next
+                                </button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <h3>No Subjects Found</h3>
+                            <p>
+                                @if (string.IsNullOrEmpty(searchTerm))
+                                {
+                                    <text>No subjects have been added yet. Click "Add New Subject" to get started.</text>
+                                }
+                                else
+                                {
+                                    <text>No subjects match your search criteria. Try adjusting your search terms.</text>
+                                }
+                            </p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Confirmation Dialogs -->
+    <ConfirmationDialog IsVisible="showLogoutConfirmation" Title="Confirm Logout"
+                        Message="Are you sure you want to log out? You will need to sign in again to access your account."
+                        ConfirmText="Log Out" ProcessingText="Logging out..." Type="@ConfirmationDialog.ConfirmationType.Logout"
+                        IsProcessing="isLoggingOut" OnConfirm="ConfirmLogout" OnCancel="HideLogoutConfirmation" />
+
+    <!-- Archive Confirmation Dialog -->
+    <ConfirmationDialog IsVisible="showArchiveConfirmation"
+                        Title="Archive Subject"
+                        Message="@archiveConfirmationMessage"
+                        ConfirmText="Archive"
+                        ProcessingText="Archiving..."
+                        Type="ConfirmationDialog.ConfirmationType.Warning"
+                        IsProcessing="isArchiving"
+                        OnConfirm="ConfirmArchive"
+                        OnCancel="CancelArchive" />
+
+    <!-- Archive School Year Confirmation Dialog -->
+    <ConfirmationDialog IsVisible="showYearArchiveConfirmation"
+                        Title="Archive School Year"
+                        Message="@yearArchiveConfirmationMessage"
+                        ConfirmText="Archive"
+                        ProcessingText="Archiving..."
+                        Type="ConfirmationDialog.ConfirmationType.Warning"
+                        IsProcessing="isArchivingYear"
+                        OnConfirm="ConfirmYearArchive"
+                        OnCancel="CancelYearArchive" />
+
+    @if (showNoteModal)
+    {
+        <div class="modal-overlay" @onclick="HideNoteModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h3 class="modal-title">Note Subject</h3>
+                <div class="modal-body">
+                    <label class="form-label">Noted By</label>
+                    <input class="form-input" type="text" @bind="noteByInput" placeholder="Enter name" />
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-button modal-button-cancel" @onclick="HideNoteModal">Cancel</button>
+                    <button class="modal-button modal-button-confirm" @onclick="ConfirmNote" disabled="@processingNote">
+                        @(processingNote ? "Saving..." : "Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showApproveModal)
+    {
+        <div class="modal-overlay" @onclick="HideApproveModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <h3 class="modal-title">Approve Subject</h3>
+                <div class="modal-body">
+                    <label class="form-label">Approved By</label>
+                    <input class="form-input" type="text" @bind="approveByInput" placeholder="Enter name" />
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-button modal-button-cancel" @onclick="HideApproveModal">Cancel</button>
+                    <button class="modal-button modal-button-confirm" @onclick="ConfirmApprove" disabled="@processingApproval">
+                        @(processingApproval ? "Saving..." : "Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Subject> subjects = new();
+    private List<Subject> filteredSubjects = new();
+    private string searchTerm = "";
+    private string gradeLevelFilter = "";
+    private string sectionFilter = "";
+    private string academicYearFilter = "";
+    private string sortColumn = "SubjectId";
+    private bool sortAscending = false;
+    private int currentPage = 1;
+    private int pageSize = 25;
+    private int totalRecords = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalRecords / pageSize);
+    private bool loading = true;
+    private bool exporting = false;
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+    private string userName = "";
+    private bool isAdmin = false;
+
+    private List<string> academicYears = new();
+
+    // Archive confirmation
+    private bool showArchiveConfirmation = false;
+    private bool isArchiving = false;
+    private int subjectToArchiveId = 0;
+    private string archiveConfirmationMessage = "";
+
+    private bool showYearArchiveConfirmation = false;
+    private bool isArchivingYear = false;
+    private string yearToArchive = "";
+    private string yearArchiveConfirmationMessage = "";
+
+    // Sync properties
+    private bool isSyncing = false;
+    private string syncMessage = "";
+    private string syncStatusClass = "";
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+
+    // Note and Approve modals
+    private bool showNoteModal = false;
+    private bool showApproveModal = false;
+    private int subjectToNoteId = 0;
+    private int subjectToApproveId = 0;
+    private string noteByInput = "";
+    private string approveByInput = "";
+    private bool processingNote = false;
+    private bool processingApproval = false;
+
+    private bool autoArchiveChecked = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Admin";
+        var role = AuthStateProvider.GetCurrentUserRole();
+        isAdmin = !string.IsNullOrEmpty(role) && role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+        await Task.WhenAll(
+            LoadSubjects(),
+            LoadPendingSyncCount()
+        );
+
+        syncStatusTimer = new System.Threading.Timer(async _ =>
+        {
+            await LoadPendingSyncCount();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    private async Task LoadSubjects()
+    {
+        loading = true;
+        StateHasChanged();
+
+        subjects = await SubjectService.GetAllSubjectsAsync();
+
+        if (!autoArchiveChecked)
+        {
+            autoArchiveChecked = true;
+
+            try
+            {
+                var currentYear = DateTime.Now.Year;
+                var yearsToArchive = subjects
+                    .Where(s => !string.IsNullOrWhiteSpace(s.AcademicYear))
+                    .Select(s => s.AcademicYear)
+                    .Distinct()
+                    .Where(y => IsSchoolYearDone(y, currentYear))
+                    .ToList();
+
+                var totalArchived = 0;
+                foreach (var year in yearsToArchive)
+                {
+                    totalArchived += await SubjectService.ArchiveSubjectsByAcademicYearAsync(year);
+                }
+
+                if (totalArchived > 0)
+                {
+                    ToastService.ShowSuccess($"Archived {totalArchived} subject(s) from completed school year(s).");
+                    subjects = await SubjectService.GetAllSubjectsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Auto-archive school year error: {ex.Message}");
+            }
+        }
+
+        academicYears = subjects
+            .Where(s => !string.IsNullOrWhiteSpace(s.AcademicYear))
+            .Select(s => s.AcademicYear)
+            .Distinct()
+            .OrderBy(y => y)
+            .ToList();
+
+        ApplyFiltersAndSort();
+        loading = false;
+        StateHasChanged();
+    }
+
+    private static bool IsSchoolYearDone(string academicYear, int currentYear)
+    {
+        if (!TryGetEndYear(academicYear, out var endYear))
+        {
+            return false;
+        }
+
+        return endYear < currentYear;
+    }
+
+    private static bool TryGetEndYear(string academicYear, out int endYear)
+    {
+        endYear = 0;
+        if (string.IsNullOrWhiteSpace(academicYear)) return false;
+
+        var matches = System.Text.RegularExpressions.Regex.Matches(academicYear, @"\b\d{4}\b");
+        if (matches.Count == 0) return false;
+
+        var years = matches
+            .Select(m => int.TryParse(m.Value, out var y) ? y : 0)
+            .Where(y => y > 0)
+            .ToList();
+
+        if (years.Count == 0) return false;
+
+        endYear = years.Max();
+        return true;
+    }
+
+    private void ApplyFiltersAndSort()
+    {
+        var query = subjects.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var lower = searchTerm.ToLower();
+            query = query.Where(s =>
+                (s.SubjectCode?.ToLower().Contains(lower) ?? false) ||
+                (s.SubjectName?.ToLower().Contains(lower) ?? false) ||
+                (s.GradeLevel?.ToLower().Contains(lower) ?? false) ||
+                (s.Section?.ToLower().Contains(lower) ?? false) ||
+                (s.Teacher?.FirstName?.ToLower().Contains(lower) ?? false) ||
+                (s.Teacher?.LastName?.ToLower().Contains(lower) ?? false));
+        }
+
+        if (!string.IsNullOrEmpty(gradeLevelFilter))
+        {
+            query = query.Where(s => s.GradeLevel == gradeLevelFilter);
+        }
+
+        if (!string.IsNullOrEmpty(sectionFilter))
+        {
+            query = query.Where(s => s.Section == sectionFilter);
+        }
+
+        if (!string.IsNullOrEmpty(academicYearFilter))
+        {
+            query = query.Where(s => s.AcademicYear == academicYearFilter);
+        }
+
+        totalRecords = query.Count();
+
+        query = sortColumn switch
+        {
+            "SubjectName" => sortAscending ? query.OrderBy(s => s.SubjectName) : query.OrderByDescending(s => s.SubjectName),
+            "GradeLevel" => sortAscending ? query.OrderBy(s => s.GradeLevel) : query.OrderByDescending(s => s.GradeLevel),
+            "Section" => sortAscending ? query.OrderBy(s => s.Section) : query.OrderByDescending(s => s.Section),
+            "AcademicYear" => sortAscending ? query.OrderBy(s => s.AcademicYear) : query.OrderByDescending(s => s.AcademicYear),
+            "SubjectId" => sortAscending ? query.OrderBy(s => s.SubjectId) : query.OrderByDescending(s => s.SubjectId),
+            _ => sortAscending ? query.OrderBy(s => s.SubjectCode) : query.OrderByDescending(s => s.SubjectCode)
+        };
+
+        filteredSubjects = query.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
+    }
+
+    private async Task HandleSearch()
+    {
+        currentPage = 1;
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private async Task ApplyFilters()
+    {
+        currentPage = 1;
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private async Task ClearFilters()
+    {
+        searchTerm = "";
+        gradeLevelFilter = "";
+        sectionFilter = "";
+        academicYearFilter = "";
+        sortColumn = "SubjectId";
+        sortAscending = false;
+        currentPage = 1;
+        ApplyFiltersAndSort();
+        await Task.CompletedTask;
+    }
+
+    private void SortBy(string column)
+    {
+        if (sortColumn == column)
+            sortAscending = !sortAscending;
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        ApplyFiltersAndSort();
+    }
+
+    private string GetSortIcon(string column) => sortColumn != column ? "" : sortAscending ? " ▲" : " ▼";
+
+    private void ChangePage(int page)
+    {
+        if (page < 1 || page > totalPages) return;
+        currentPage = page;
+        ApplyFiltersAndSort();
+    }
+
+    private void ShowArchiveConfirmation(int subjectId, string subjectName)
+    {
+        subjectToArchiveId = subjectId;
+        archiveConfirmationMessage = $"Are you sure you want to archive the subject '{subjectName}'? This action will move the subject to archived records.";
+        showArchiveConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void ShowYearArchiveConfirmation()
+    {
+        if (string.IsNullOrWhiteSpace(academicYearFilter))
+        {
+            _ = JS.InvokeVoidAsync("alert", "Please select a school year to archive.");
+            return;
+        }
+
+        yearToArchive = academicYearFilter;
+        yearArchiveConfirmationMessage = $"Are you sure you want to archive all subjects for the school year '{yearToArchive}'?";
+        showYearArchiveConfirmation = true;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmArchive()
+    {
+        isArchiving = true;
+        StateHasChanged();
+
+        try
+        {
+            if (await SubjectService.SoftDeleteSubjectAsync(subjectToArchiveId))
+            {
+                await LoadSubjects();
+                ToastService.ShowSuccess("Subject archived successfully.");
+            }
+            else
+            {
+                ToastService.ShowError("Failed to archive subject.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error archiving subject: {ex.Message}");
+        }
+        finally
+        {
+            isArchiving = false;
+            showArchiveConfirmation = false;
+            subjectToArchiveId = 0;
+            archiveConfirmationMessage = "";
+            StateHasChanged();
+        }
+    }
+
+    private void CancelArchive()
+    {
+        showArchiveConfirmation = false;
+        subjectToArchiveId = 0;
+        archiveConfirmationMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task ConfirmYearArchive()
+    {
+        isArchivingYear = true;
+        StateHasChanged();
+
+        try
+        {
+            var archivedCount = await SubjectService.ArchiveSubjectsByAcademicYearAsync(yearToArchive);
+            if (archivedCount > 0)
+            {
+                await LoadSubjects();
+                ToastService.ShowSuccess($"Archived {archivedCount} subjects for school year {yearToArchive}.");
+            }
+            else
+            {
+                ToastService.ShowInfo($"No subjects found to archive for school year {yearToArchive}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error archiving subjects for school year {yearToArchive}: {ex.Message}");
+        }
+        finally
+        {
+            isArchivingYear = false;
+            showYearArchiveConfirmation = false;
+            yearToArchive = "";
+            yearArchiveConfirmationMessage = "";
+            StateHasChanged();
+        }
+    }
+
+    private void CancelYearArchive()
+    {
+        showYearArchiveConfirmation = false;
+        yearToArchive = "";
+        yearArchiveConfirmationMessage = "";
+        StateHasChanged();
+    }
+
+    private void ShowNoteModal(int subjectId)
+    {
+        subjectToNoteId = subjectId;
+        noteByInput = "";
+        showNoteModal = true;
+        StateHasChanged();
+    }
+
+    private void HideNoteModal()
+    {
+        showNoteModal = false;
+        subjectToNoteId = 0;
+        noteByInput = "";
+        StateHasChanged();
+    }
+
+    private async Task ConfirmNote()
+    {
+        if (processingNote) return;
+
+        if (string.IsNullOrWhiteSpace(noteByInput))
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter who noted this subject.");
+            return;
+        }
+
+        var userId = AuthStateProvider.GetCurrentUserId();
+        if (!userId.HasValue)
+        {
+            await JS.InvokeVoidAsync("alert", "Unable to identify current user.");
+            return;
+        }
+
+        processingNote = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await SubjectService.NoteSubjectAsync(subjectToNoteId, userId.Value, noteByInput);
+            if (!success)
+            {
+                await JS.InvokeVoidAsync("alert", "Failed to note subject. It may have been removed or already processed.");
+                return;
+            }
+
+            await LoadSubjects();
+            HideNoteModal();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error noting subject: {ex.Message}");
+        }
+        finally
+        {
+            processingNote = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowApproveModal(int subjectId)
+    {
+        subjectToApproveId = subjectId;
+        approveByInput = "";
+        showApproveModal = true;
+        StateHasChanged();
+    }
+
+    private void HideApproveModal()
+    {
+        showApproveModal = false;
+        subjectToApproveId = 0;
+        approveByInput = "";
+        StateHasChanged();
+    }
+
+    private async Task ConfirmApprove()
+    {
+        if (processingApproval) return;
+
+        if (string.IsNullOrWhiteSpace(approveByInput))
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter who approved this subject.");
+            return;
+        }
+
+        var userId = AuthStateProvider.GetCurrentUserId();
+        if (!userId.HasValue)
+        {
+            await JS.InvokeVoidAsync("alert", "Unable to identify current user.");
+            return;
+        }
+
+        processingApproval = true;
+        StateHasChanged();
+
+        try
+        {
+            var success = await SubjectService.ApproveSubjectAsync(subjectToApproveId, userId.Value, approveByInput);
+            if (!success)
+            {
+                await JS.InvokeVoidAsync("alert", "Failed to approve subject. It may have been removed or already processed.");
+                return;
+            }
+
+            await LoadSubjects();
+            HideApproveModal();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error approving subject: {ex.Message}");
+        }
+        finally
+        {
+            processingApproval = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportToExcel()
+    {
+        exporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var all = await SubjectService.GetAllSubjectsAsync();
+            var bytes = ExportService.ExportSubjectsToExcel(all);
+            await JS.InvokeVoidAsync("downloadFile", $"Subjects_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx", Convert.ToBase64String(bytes), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            ToastService.ShowSuccess("Excel export completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+        }
+        finally
+        {
+            exporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportToPDF()
+    {
+        exporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var all = await SubjectService.GetAllSubjectsAsync();
+            var bytes = ExportService.ExportSubjectsToPDF(all);
+            await JS.InvokeVoidAsync("downloadFile", $"Subjects_{DateTime.Now:yyyyMMdd_HHmmss}.pdf", Convert.ToBase64String(bytes), "application/pdf");
+            ToastService.ShowSuccess("PDF export completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+        }
+        finally
+        {
+            exporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutConfirmation = false;
+        isLoggingOut = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            if (AuthStateProvider is AuthStateProvider authProvider && authProvider.GetType().GetMethod("LogoutAsync") != null)
+            {
+                await ((dynamic)AuthStateProvider).LogoutAsync();
+            }
+            else
+            {
+                AuthStateProvider.MarkUserAsLoggedOut();
+            }
+
+            Navigation.NavigateTo("/", true);
+        }
+        catch
+        {
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+
+                await LoadPendingSyncCount();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = "";
+                syncStatusClass = "";
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        syncStatusTimer?.Dispose();
+    }
+}

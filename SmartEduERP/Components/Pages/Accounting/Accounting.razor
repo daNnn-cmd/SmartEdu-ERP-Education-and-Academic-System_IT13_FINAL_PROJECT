@@ -1,0 +1,3478 @@
+﻿@page "/accounting"
+@using System.ComponentModel.DataAnnotations
+@using System.IO
+@using System.Linq
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using CommunityToolkit.Maui.Storage
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Services
+@using SmartEduERP.Components.Shared
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,Accounting")]
+@inject AccountingService AccountingService
+@inject IToastService ToastService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IGlobalSyncService GlobalSyncService
+@inject IBidirectionalSyncService BidirectionalSyncService
+@inject HrService HrService
+@inject IFileSaver FileSaver
+@inject ExportService ExportService
+@inject IJSRuntime JS
+@inject AuditLogService AuditLogService
+
+<PageTitle>Accounting - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+        position: relative;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .page-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .export-button,
+    .add-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .export-button {
+        background: white;
+        color: #404040;
+    }
+
+        .export-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .export-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .add-button {
+        background: #000;
+        color: white;
+        border-color: #000;
+    }
+
+        .add-button:hover {
+            background: #404040;
+            border-color: #404040;
+        }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .accounting-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #e5e5e5;
+        padding-bottom: 0.25rem;
+    }
+
+    .accounting-tab-button {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: #404040;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+        .accounting-tab-button:hover {
+            color: #000;
+        }
+
+        .accounting-tab-button.active {
+            color: #000;
+            border-bottom-color: #000;
+            font-weight: 500;
+        }
+
+    .filters-grid {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto auto;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .search-input,
+    .filter-select,
+    .page-size-select {
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+    }
+
+        .search-input:focus,
+        .filter-select:focus,
+        .page-size-select:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+    .filter-button {
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        background: white;
+        color: #404040;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .filter-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .filter-button.primary {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+            .filter-button.primary:hover {
+                background: #404040;
+                border-color: #404040;
+            }
+
+    .results-count {
+        font-size: 0.75rem;
+        color: #737373;
+        margin-bottom: 1rem;
+    }
+
+    .accounting-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .accounting-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #737373;
+            border-bottom: 1px solid #e5e5e5;
+            cursor: pointer;
+            user-select: none;
+        }
+
+            .accounting-table th:hover {
+                background: #f5f5f5;
+            }
+
+        .accounting-table td {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .accounting-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .accounting-table tr:hover {
+            background: #fafafa;
+        }
+
+    .status-badge {
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+        /* Remove background color from status badges in taxes and allowances */
+        /* Simple text-only status badges for taxes and allowances */
+        .status-badge.active {
+            background: none;
+            color: #166534;
+        }
+
+        .status-badge.inactive {
+            background: none;
+            color: #737373;
+        }
+
+        .status-badge.taxable {
+            background: none;
+            color: #92400e;
+        }
+
+        .status-badge.nontaxable {
+            background: none;
+            color: #1e40af;
+        }
+
+        /* Optional: Add slight font weight to make them stand out */
+        .status-badge.active,
+        .status-badge.inactive,
+        .status-badge.taxable,
+        .status-badge.nontaxable {
+            font-weight: 500;
+        }
+
+       
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-button {
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        background: white;
+        color: #404040;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .action-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .action-button.archive {
+            border-color: #f59e0b;
+            color: #f59e0b;
+        }
+
+            .action-button.archive:hover {
+                background: #f59e0b;
+                color: white;
+            }
+
+        .action-button.calculate {
+            border-color: #10b981;
+            color: #10b981;
+        }
+
+            .action-button.calculate:hover {
+                background: #10b981;
+                color: white;
+            }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            margin-bottom: 0.375rem;
+            color: #404040;
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 0.625rem;
+        font-size: 0.875rem;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        background: white;
+        color: #404040;
+        transition: all 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.625rem 1.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: #000;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #262626;
+        }
+
+    .btn-secondary {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .pagination-button {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: white;
+        color: #404040;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .pagination-button:hover:not(:disabled) {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+        .pagination-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-button.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+    .pagination-info {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0 1rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #737373;
+    }
+
+    .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .summary-item {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+        .summary-item .label {
+            font-size: 0.8125rem;
+            color: #737373;
+            margin-bottom: 0.25rem;
+        }
+
+        .summary-item .value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #000;
+        }
+
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+        .sync-status.syncing {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+        background: #dc2626;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: -5px;
+        left: 0px;
+        right: auto;
+    }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-icon {
+        width: 40px;
+        height: 40px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+    }
+
+    .modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-body {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-text {
+        font-size: 0.875rem;
+        color: #737373;
+        line-height: 1.5;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .modal-button-cancel {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .modal-button-cancel:hover {
+            background: #f5f5f5;
+        }
+
+    .modal-button-confirm {
+        background: #000;
+        color: white;
+    }
+
+        .modal-button-confirm:hover {
+            background: #262626;
+        }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Move form buttons to the right */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        width: 100%;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar - Matching Student Management -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                
+                <li class="sidebar-menu-item">
+                    <a href="/accounting" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 4h18M3 10h18M3 16h18M3 4v16m18-16v16"></path>
+                        </svg>
+                        <span>Teacher Accounting</span>
+                    </a>
+                </li>
+                
+                
+                <!-- Global Sync Menu Item -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Accounting</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="page-header">
+            <h1>Teacher Accounting</h1>
+            <p>Manage teacher income, taxes, allowances, and attendance exports</p>
+            <div class="header-actions">
+                @if (activeTab == "income")
+                {
+                    <button class="export-button" @onclick="ExportIncomeToExcelAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        }
+                        <span>Export Excel</span>
+                    </button>
+                    <button class="export-button" @onclick="ExportIncomeToPdfAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        }
+                        <span>Export PDF</span>
+                    </button>
+                   
+                }
+                else if (activeTab == "tax")
+                {
+                    <button class="export-button" @onclick="ExportTaxesToExcelAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        }
+                        <span>Export Excel</span>
+                    </button>
+                    <button class="export-button" @onclick="ExportTaxesToPdfAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        }
+                        <span>Export PDF</span>
+                    </button>
+                    
+                }
+                else if (activeTab == "allowance")
+                {
+                    <button class="export-button" @onclick="ExportAllowancesToExcelAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        }
+                        <span>Export Excel</span>
+                    </button>
+                    <button class="export-button" @onclick="ExportAllowancesToPdfAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        }
+                        <span>Export PDF</span>
+                    </button>
+                    
+                }
+                else if (activeTab == "attendance")
+                {
+                    <button class="export-button" @onclick="ExportAttendanceToExcelAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        }
+                        <span>Export Excel</span>
+                    </button>
+                    <button class="export-button" @onclick="ExportAttendanceToPdfAsync" disabled="@isExporting">
+                        @if (isExporting)
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 class="spinner">
+                                <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        }
+                        <span>Export PDF</span>
+                    </button>
+                   
+                }
+            </div>
+        </div>
+
+        <div class="accounting-tabs">
+            <button class="accounting-tab-button @(activeTab == "income" ? "active" : "")" @onclick='() => SetTab("income")'>
+                Teacher Income
+            </button>
+            <button class="accounting-tab-button @(activeTab == "tax" ? "active" : "")" @onclick='() => SetTab("tax")'>
+                Taxes
+            </button>
+            <button class="accounting-tab-button @(activeTab == "allowance" ? "active" : "")" @onclick='() => SetTab("allowance")'>
+                Allowances
+            </button>
+            <button class="accounting-tab-button @(activeTab == "attendance" ? "active" : "")" @onclick='() => SetTab("attendance")'>
+                Attendance Export
+            </button>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="content-card" style="border-color:#fecaca;background:#fef2f2;color:#991b1b;">
+                @errorMessage
+            </div>
+        }
+        else
+        {
+            @if (activeTab == "income")
+            {
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 style="margin:0;font-size:1rem;font-weight:600;">@((isEditingIncome ? "Edit Teacher Income" : "Add Teacher Income"))</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <EditForm Model="newIncome" OnValidSubmit="SaveIncomeAsync">
+                            <DataAnnotationsValidator />
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="teacherName">Teacher Name</label>
+                                    <InputText id="teacherName" class="form-control" @bind-Value="newIncome.TeacherName" />
+                                    <ValidationMessage For="@(() => newIncome.TeacherName)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="teacherId">Teacher ID</label>
+                                    <InputNumber id="teacherId" class="form-control" @bind-Value="newIncome.TeacherId" />
+                                    <ValidationMessage For="@(() => newIncome.TeacherId)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="periodStart">Period Start</label>
+                                    <InputDate id="periodStart" class="form-control" @bind-Value="newIncome.PeriodStartDate" />
+                                    <ValidationMessage For="@(() => newIncome.PeriodStartDate)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="periodEnd">Period End</label>
+                                    <InputDate id="periodEnd" class="form-control" @bind-Value="newIncome.PeriodEndDate" />
+                                    <ValidationMessage For="@(() => newIncome.PeriodEndDate)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="basicSalary">Basic Salary</label>
+                                    <InputNumber id="basicSalary" class="form-control" @bind-Value="newIncome.BasicSalary" />
+                                    <ValidationMessage For="@(() => newIncome.BasicSalary)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="overtimePay">Overtime Pay</label>
+                                    <InputNumber id="overtimePay" class="form-control" @bind-Value="newIncome.OvertimePay" />
+                                    <ValidationMessage For="@(() => newIncome.OvertimePay)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="otherIncome">Other Income</label>
+                                    <InputNumber id="otherIncome" class="form-control" @bind-Value="newIncome.OtherIncome" />
+                                    <ValidationMessage For="@(() => newIncome.OtherIncome)" />
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">@((isEditingIncome ? "Update Income" : "Save Income"))</button>
+                                @if (isEditingIncome)
+                                {
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelIncomeEdit">
+                                        Cancel
+                                    </button>
+                                }
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <div class="filters-grid">
+                            <input type="text" class="search-input" placeholder="Search by teacher name..." @bind="incomeSearchText"
+                                   @bind:event="oninput" @onkeyup="HandleIncomeSearch" />
+
+                            <select class="filter-select" @bind="incomeStatusFilter" @bind:after="ApplyIncomeFilters">
+                                <option value="">All Status</option>
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+
+                            <button class="filter-button primary" @onclick="ApplyIncomeFilters">
+                                Search
+                            </button>
+
+                            <button class="filter-button" @onclick="ClearIncomeFilters">
+                                Clear
+                            </button>
+
+                            <select class="page-size-select" @bind="incomePageSize" @bind:after="LoadDataAsync">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+
+                        <div class="results-count">
+                            Showing @FilteredPagedIncomes.Count() of @FilteredIncomes.Count() income records
+                        </div>
+                    </div>
+
+                    <div class="content-card-body">
+                        @if (FilteredPagedIncomes.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="accounting-table">
+                                    <thead>
+                                        <tr>
+                                            <th @onclick='() => SortIncomeBy("TeacherName")'>
+                                                Teacher @GetSortIcon("TeacherName", "income")
+                                            </th>
+                                            <th @onclick='() => SortIncomeBy("PeriodStartDate")'>
+                                                Period Start @GetSortIcon("PeriodStartDate", "income")
+                                            </th>
+                                            <th @onclick='() => SortIncomeBy("PeriodEndDate")'>
+                                                Period End @GetSortIcon("PeriodEndDate", "income")
+                                            </th>
+                                            <th>Basic</th>
+                                            <th>Overtime</th>
+                                            <th>Other</th>
+                                            <th>Total Base</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var income in FilteredPagedIncomes)
+                                        {
+                                            var baseIncome = income.BasicSalary + income.OvertimePay + income.OtherIncome;
+                                            <tr>
+                                                <td>
+                                                    <strong>@income.TeacherName</strong>
+                                                    <div style="font-size:0.75rem;color:#737373;">ID: @income.TeacherId</div>
+                                                </td>
+                                                <td>@income.PeriodStartDate.ToString("MM/dd/yyyy")</td>
+                                                <td>@income.PeriodEndDate.ToString("MM/dd/yyyy")</td>
+                                                <td>@income.BasicSalary.ToString("N2")</td>
+                                                <td>@income.OvertimePay.ToString("N2")</td>
+                                                <td>@income.OtherIncome.ToString("N2")</td>
+                                                <td>
+                                                    <strong>@baseIncome.ToString("N2")</strong>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="action-button calculate" @onclick="() => OpenNetIncomeModal(income)">
+                                                            Calculate
+                                                        </button>
+                                                        <button class="action-button archive"
+                                                                @onclick="() => ConfirmArchiveIncome(income.TeacherIncomeId, income.TeacherName)">
+                                                            Archive
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (TotalIncomePages > 1)
+                            {
+                                <div class="pagination">
+                                    <button class="pagination-button" @onclick="() => ChangeIncomePage(incomeCurrentPage - 1)"
+                                            disabled="@(incomeCurrentPage == 1)">
+                                        Previous
+                                    </button>
+
+                                    <span class="pagination-info">
+                                        Page @incomeCurrentPage of @TotalIncomePages
+                                    </span>
+
+                                    @for (int i = Math.Max(1, incomeCurrentPage - 2); i <= Math.Min(TotalIncomePages, incomeCurrentPage + 2); i++)
+                                    {
+                                        var pageNum = i;
+                                        <button class="pagination-button @(incomeCurrentPage == pageNum ? "active" : "")"
+                                                @onclick="() => ChangeIncomePage(pageNum)">
+                                            @pageNum
+                                        </button>
+                                    }
+
+                                    <button class="pagination-button" @onclick="() => ChangeIncomePage(incomeCurrentPage + 1)"
+                                            disabled="@(incomeCurrentPage == TotalIncomePages)">
+                                        Next
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💰</div>
+                                <h3>No Income Records Found</h3>
+                                <p>
+                                    @if (string.IsNullOrEmpty(incomeSearchText) && string.IsNullOrEmpty(incomeStatusFilter))
+                                    {
+                                        <text>No income records have been added yet.</text>
+                                    }
+                                    else
+                                    {
+                                        <text>No income records match your search criteria. Try adjusting your filters.</text>
+                                    }
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            }
+            else if (activeTab == "tax")
+            {
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 style="margin:0;font-size:1rem;font-weight:600;">@((isEditingTax ? "Edit Tax" : "Add Tax"))</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <EditForm Model="newTax" OnValidSubmit="SaveTaxAsync">
+                            <DataAnnotationsValidator />
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="taxName">Name</label>
+                                    <InputText id="taxName" class="form-control" @bind-Value="newTax.Name" />
+                                    <ValidationMessage For="@(() => newTax.Name)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxDescription">Description</label>
+                                    <InputText id="taxDescription" class="form-control" @bind-Value="newTax.Description" />
+                                    <ValidationMessage For="@(() => newTax.Description)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxRate">Rate</label>
+                                    <InputNumber id="taxRate" class="form-control" @bind-Value="newTax.Rate" />
+                                    <ValidationMessage For="@(() => newTax.Rate)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="taxType">Type</label>
+                                    <select id="taxType" class="form-control" @bind="newTax.IsPercentage">
+                                        <option value="true">Percentage of taxable base</option>
+                                        <option value="false">Fixed amount</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">@((isEditingTax ? "Update Tax" : "Save Tax"))</button>
+                                @if (isEditingTax)
+                                {
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelTaxEdit">
+                                        Cancel
+                                    </button>
+                                }
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <div class="filters-grid">
+                            <input type="text" class="search-input" placeholder="Search by tax name..." @bind="taxSearchText"
+                                   @bind:event="oninput" @onkeyup="HandleTaxSearch" />
+
+                            <button class="filter-button primary" @onclick="ApplyTaxFilters">
+                                Search
+                            </button>
+
+                            <button class="filter-button" @onclick="ClearTaxFilters">
+                                Clear
+                            </button>
+
+                            <select class="page-size-select" @bind="taxPageSize" @bind:after="LoadDataAsync">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+
+                        <div class="results-count">
+                            Showing @FilteredPagedTaxes.Count() of @FilteredTaxes.Count() tax records
+                        </div>
+                    </div>
+
+                    <div class="content-card-body">
+                        @if (FilteredPagedTaxes.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="accounting-table">
+                                    <thead>
+                                        <tr>
+                                            <th @onclick='() => SortTaxBy("Name")'>
+                                                Name @GetSortIcon("Name", "tax")
+                                            </th>
+                                            <th @onclick='() => SortTaxBy("Rate")'>
+                                                Rate @GetSortIcon("Rate", "tax")
+                                            </th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var tax in FilteredPagedTaxes)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@tax.Name</strong>
+                                                    @if (!string.IsNullOrEmpty(tax.Description))
+                                                    {
+                                                        <div style="font-size:0.75rem;color:#737373;">@tax.Description</div>
+                                                    }
+                                                </td>
+                                                <td>@tax.Rate.ToString("N2")</td>
+                                                <td>@(tax.IsPercentage ? "Percentage" : "Fixed")</td>
+                                                <td>
+                                                    <span class="status-badge @(tax.IsActive ? "active" : "inactive")">
+                                                        @(tax.IsActive ? "Active" : "Inactive")
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="action-button archive"
+                                                                @onclick="() => ConfirmArchiveTax(tax.TaxId, tax.Name)">
+                                                            Archive
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (TotalTaxPages > 1)
+                            {
+                                <div class="pagination">
+                                    <button class="pagination-button" @onclick="() => ChangeTaxPage(taxCurrentPage - 1)"
+                                            disabled="@(taxCurrentPage == 1)">
+                                        Previous
+                                    </button>
+
+                                    <span class="pagination-info">
+                                        Page @taxCurrentPage of @TotalTaxPages
+                                    </span>
+
+                                    @for (int i = Math.Max(1, taxCurrentPage - 2); i <= Math.Min(TotalTaxPages, taxCurrentPage + 2); i++)
+                                    {
+                                        var pageNum = i;
+                                        <button class="pagination-button @(taxCurrentPage == pageNum ? "active" : "")"
+                                                @onclick="() => ChangeTaxPage(pageNum)">
+                                            @pageNum
+                                        </button>
+                                    }
+
+                                    <button class="pagination-button" @onclick="() => ChangeTaxPage(taxCurrentPage + 1)"
+                                            disabled="@(taxCurrentPage == TotalTaxPages)">
+                                        Next
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📊</div>
+                                <h3>No Tax Records Found</h3>
+                                <p>
+                                    @if (string.IsNullOrEmpty(taxSearchText))
+                                    {
+                                        <text>No tax records have been added yet. Click "Add New Tax" to get started.</text>
+                                    }
+                                    else
+                                    {
+                                        <text>No tax records match your search criteria. Try adjusting your filters.</text>
+                                    }
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else if (activeTab == "allowance")
+            {
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 style="margin:0;font-size:1rem;font-weight:600;">@((isEditingAllowance ? "Edit Allowance" : "Add Allowance"))</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <EditForm Model="newAllowance" OnValidSubmit="SaveAllowanceAsync">
+                            <DataAnnotationsValidator />
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="allowanceName">Name</label>
+                                    <InputText id="allowanceName" class="form-control" @bind-Value="newAllowance.Name" />
+                                    <ValidationMessage For="@(() => newAllowance.Name)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="allowanceDescription">Description</label>
+                                    <InputText id="allowanceDescription" class="form-control" @bind-Value="newAllowance.Description" />
+                                    <ValidationMessage For="@(() => newAllowance.Description)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="allowanceAmount">Amount</label>
+                                    <InputNumber id="allowanceAmount" class="form-control" @bind-Value="newAllowance.Amount" />
+                                    <ValidationMessage For="@(() => newAllowance.Amount)" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="allowanceType">Type</label>
+                                    <select id="allowanceType" class="form-control" @bind="newAllowance.IsPercentage">
+                                        <option value="true">Percentage of base income</option>
+                                        <option value="false">Fixed amount</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="allowanceTaxable">Taxable?</label>
+                                    <select id="allowanceTaxable" class="form-control" @bind="newAllowance.IsTaxable">
+                                        <option value="true">Taxable</option>
+                                        <option value="false">Non-taxable</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">@((isEditingAllowance ? "Update Allowance" : "Save Allowance"))</button>
+                                @if (isEditingAllowance)
+                                {
+                                    <button type="button" class="btn btn-secondary" @onclick="CancelAllowanceEdit">
+                                        Cancel
+                                    </button>
+                                }
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <div class="filters-grid">
+                            <input type="text" class="search-input" placeholder="Search by allowance name..." @bind="allowanceSearchText"
+                                   @bind:event="oninput" @onkeyup="HandleAllowanceSearch" />
+
+                            <button class="filter-button primary" @onclick="ApplyAllowanceFilters">
+                                Search
+                            </button>
+
+                            <button class="filter-button" @onclick="ClearAllowanceFilters">
+                                Clear
+                            </button>
+
+                            <select class="page-size-select" @bind="allowancePageSize" @bind:after="LoadDataAsync">
+                                <option value="10">10 per page</option>
+                                <option value="25">25 per page</option>
+                                <option value="50">50 per page</option>
+                                <option value="100">100 per page</option>
+                            </select>
+                        </div>
+
+                        <div class="results-count">
+                            Showing @FilteredPagedAllowances.Count() of @FilteredAllowances.Count() allowance records
+                        </div>
+                    </div>
+
+                    <div class="content-card-body">
+                        @if (FilteredPagedAllowances.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="accounting-table">
+                                    <thead>
+                                        <tr>
+                                            <th @onclick='() => SortAllowanceBy("Name")'>
+                                                Name @GetSortIcon("Name", "allowance")
+                                            </th>
+                                            <th @onclick='() => SortAllowanceBy("Amount")'>
+                                                Amount @GetSortIcon("Amount", "allowance")
+                                            </th>
+                                            <th>Type</th>
+                                            <th>Taxable</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var allowance in FilteredPagedAllowances)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@allowance.Name</strong>
+                                                    @if (!string.IsNullOrEmpty(allowance.Description))
+                                                    {
+                                                        <div style="font-size:0.75rem;color:#737373;">@allowance.Description</div>
+                                                    }
+                                                </td>
+                                                <td>@allowance.Amount.ToString("N2")</td>
+                                                <td>@(allowance.IsPercentage ? "Percentage" : "Fixed")</td>
+                                                <td>
+                                                    <span class="status-badge @(allowance.IsTaxable ? "taxable" : "nontaxable")">
+                                                        @(allowance.IsTaxable ? "Taxable" : "Non-taxable")
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="status-badge @(allowance.IsActive ? "active" : "inactive")">
+                                                        @(allowance.IsActive ? "Active" : "Inactive")
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="action-button archive"
+                                                                @onclick="() => ConfirmArchiveAllowance(allowance.AllowanceId, allowance.Name)">
+                                                            Archive
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (TotalAllowancePages > 1)
+                            {
+                                <div class="pagination">
+                                    <button class="pagination-button" @onclick="() => ChangeAllowancePage(allowanceCurrentPage - 1)"
+                                            disabled="@(allowanceCurrentPage == 1)">
+                                        Previous
+                                    </button>
+
+                                    <span class="pagination-info">
+                                        Page @allowanceCurrentPage of @TotalAllowancePages
+                                    </span>
+
+                                    @for (int i = Math.Max(1, allowanceCurrentPage - 2); i <= Math.Min(TotalAllowancePages, allowanceCurrentPage + 2); i++)
+                                    {
+                                        var pageNum = i;
+                                        <button class="pagination-button @(allowanceCurrentPage == pageNum ? "active" : "")"
+                                                @onclick="() => ChangeAllowancePage(pageNum)">
+                                            @pageNum
+                                        </button>
+                                    }
+
+                                    <button class="pagination-button" @onclick="() => ChangeAllowancePage(allowanceCurrentPage + 1)"
+                                            disabled="@(allowanceCurrentPage == TotalAllowancePages)">
+                                        Next
+                                    </button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="empty-state-icon">💼</div>
+                                <h3>No Allowance Records Found</h3>
+                                <p>
+                                    @if (string.IsNullOrEmpty(allowanceSearchText))
+                                    {
+                                        <text>No allowance records have been added yet. Click "Add New Allowance" to get started.</text>
+                                    }
+                                    else
+                                    {
+                                        <text>No allowance records match your search criteria. Try adjusting your filters.</text>
+                                    }
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else if (activeTab == "attendance")
+            {
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 style="margin:0;font-size:1rem;font-weight:600;">Payroll Attendance Export</h3>
+                    </div>
+                    <div class="content-card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="attStart">Period Start</label>
+                                <InputDate id="attStart" class="form-control" @bind-Value="attendanceStart" />
+                            </div>
+                            <div class="form-group">
+                                <label for="attEnd">Period End</label>
+                                <InputDate id="attEnd" class="form-control" @bind-Value="attendanceEnd" />
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" @onclick="LoadAttendanceExportAsync">Load Attendance</button>
+                    </div>
+                </div>
+
+                @if (attendanceExport.Any())
+                {
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <div class="filters-grid">
+                                <input type="text" class="search-input" placeholder="Search by employee name..." @bind="attendanceSearchText"
+                                       @bind:event="oninput" @onkeyup="HandleAttendanceSearch" />
+
+                                <button class="filter-button primary" @onclick="ApplyAttendanceFilters">
+                                    Search
+                                </button>
+
+                                <button class="filter-button" @onclick="ClearAttendanceFilters">
+                                    Clear
+                                </button>
+
+                                <select class="page-size-select" @bind="attendancePageSize" @bind:after="OnAttendancePageSizeChanged">
+                                    <option value="10">10 per page</option>
+                                    <option value="25">25 per page</option>
+                                    <option value="50">50 per page</option>
+                                    <option value="100">100 per page</option>
+                                </select>
+                            </div>
+
+                            <div class="results-count">
+                                Showing @FilteredPagedAttendance.Count() of @FilteredAttendance.Count() attendance records
+                            </div>
+                        </div>
+
+                        <div class="content-card-body">
+                            <div class="table-responsive">
+                                <table class="accounting-table">
+                                    <thead>
+                                        <tr>
+                                            <th @onclick='() => SortAttendanceBy("EmployeeName")'>
+                                                Employee @GetSortIcon("EmployeeName", "attendance")
+                                            </th>
+                                            <th>Period</th>
+                                            <th>Total Days</th>
+                                            <th>Present</th>
+                                            <th>Absent</th>
+                                            <th>Total Minutes Late</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var row in FilteredPagedAttendance)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@row.EmployeeName</strong>
+                                                </td>
+                                                <td>@row.PeriodStart.ToString("MM/dd/yyyy") - @row.PeriodEnd.ToString("MM/dd/yyyy")</td>
+                                                <td>@row.TotalDays</td>
+                                                <td>@row.PresentDays</td>
+                                                <td>@row.AbsentDays</td>
+                                                <td>@row.TotalMinutesLate</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            @if (TotalAttendancePages > 1)
+                            {
+                                <div class="pagination">
+                                    <button class="pagination-button" @onclick="() => ChangeAttendancePage(attendanceCurrentPage - 1)"
+                                            disabled="@(attendanceCurrentPage == 1)">
+                                        Previous
+                                    </button>
+
+                                    <span class="pagination-info">
+                                        Page @attendanceCurrentPage of @TotalAttendancePages
+                                    </span>
+
+                                    @for (int i = Math.Max(1, attendanceCurrentPage - 2); i <= Math.Min(TotalAttendancePages, attendanceCurrentPage + 2); i++)
+                                    {
+                                        var pageNum = i;
+                                        <button class="pagination-button @(attendanceCurrentPage == pageNum ? "active" : "")"
+                                                @onclick="() => ChangeAttendancePage(pageNum)">
+                                            @pageNum
+                                        </button>
+                                    }
+
+                                    <button class="pagination-button" @onclick="() => ChangeAttendancePage(attendanceCurrentPage + 1)"
+                                            disabled="@(attendanceCurrentPage == TotalAttendancePages)">
+                                        Next
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="content-card">
+                        <div class="content-card-body">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📅</div>
+                                <h3>No Attendance Records</h3>
+                                <p>Select a date range and click "Load Attendance" to view attendance records.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        }
+    </div>
+
+    @if (showNetIncomeModal && selectedIncome != null)
+    {
+        <div class="modal-overlay" @onclick="CloseNetIncomeModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <h2 class="modal-title">Net Income Summary</h2>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-text">Net income calculation for <strong>@selectedIncome.TeacherName</strong>:</p>
+                    <div class="summary-grid" style="margin-top:1rem;">
+                        <div class="summary-item">
+                            <span class="label">Base Income</span>
+                            <span class="value">@grossIncome.ToString("N2")</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Total Allowances</span>
+                            <span class="value">@totalAllowances.ToString("N2")</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Taxable Base</span>
+                            <span class="value">@taxableBase.ToString("N2")</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Total Tax</span>
+                            <span class="value">@totalTax.ToString("N2")</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Net Income</span>
+                            <span class="value">@netIncome.ToString("N2")</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-button modal-button-cancel" @onclick="CloseNetIncomeModal">Close</button>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (showArchiveModal)
+    {
+        <div class="modal-overlay" @onclick="CancelArchive">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <div class="modal-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </div>
+                    <h2 class="modal-title">Confirm Archive</h2>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-text">Are you sure you want to archive <strong>@archiveEntityName</strong>?</p>
+                    <p class="modal-text">This action will move the record to archived records but keep it in the system.</p>
+                </div>
+                <div class="modal-actions">
+                    <button class="modal-button modal-button-cancel" @onclick="CancelArchive">Cancel</button>
+                    <button class="modal-button modal-button-confirm" @onclick="ConfirmArchiveAsync">Archive</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation" Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your account."
+                    ConfirmText="Log Out" ProcessingText="Logging out..." Type="@ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut" OnConfirm="ConfirmLogout" OnCancel="HideLogoutConfirmation" />
+
+@code {
+    private bool loading = true;
+    private string activeTab = "income";
+    private string errorMessage = string.Empty;
+    private bool isExporting = false;
+
+    private List<TeacherIncome> incomes = new();
+    private List<Tax> taxes = new();
+    private List<Allowance> allowances = new();
+
+    // Income filters and sorting
+    private string incomeSearchText = string.Empty;
+    private string incomeStatusFilter = string.Empty;
+    private string incomeSortColumn = "PeriodStartDate";
+    private bool incomeSortAscending = false;
+    private int incomeCurrentPage = 1;
+    private int incomePageSize = 10;
+
+    // Tax filters and sorting
+    private string taxSearchText = string.Empty;
+    private string taxSortColumn = "Name";
+    private bool taxSortAscending = true;
+    private int taxCurrentPage = 1;
+    private int taxPageSize = 10;
+
+    // Allowance filters and sorting
+    private string allowanceSearchText = string.Empty;
+    private string allowanceSortColumn = "Name";
+    private bool allowanceSortAscending = true;
+    private int allowanceCurrentPage = 1;
+    private int allowancePageSize = 10;
+
+    // Attendance filters and sorting
+    private string attendanceSearchText = string.Empty;
+    private string attendanceSortColumn = "EmployeeName";
+    private bool attendanceSortAscending = true;
+    private int attendanceCurrentPage = 1;
+    private int attendancePageSize = 10;
+
+    private int TotalIncomePages => (int)Math.Ceiling(FilteredIncomes.Count() / (double)incomePageSize);
+    private int TotalTaxPages => (int)Math.Ceiling(FilteredTaxes.Count() / (double)taxPageSize);
+    private int TotalAllowancePages => (int)Math.Ceiling(FilteredAllowances.Count() / (double)allowancePageSize);
+    private int TotalAttendancePages => (int)Math.Ceiling(FilteredAttendance.Count() / (double)attendancePageSize);
+
+    // Filtered collections
+    private IEnumerable<TeacherIncome> FilteredIncomes
+    {
+        get
+        {
+            var query = incomes.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(incomeSearchText))
+            {
+                var lower = incomeSearchText.ToLower();
+                query = query.Where(i =>
+                    (!string.IsNullOrEmpty(i.TeacherName) && i.TeacherName.ToLower().Contains(lower)) ||
+                    i.TeacherId.ToString().Contains(incomeSearchText));
+            }
+
+            if (!string.IsNullOrWhiteSpace(incomeStatusFilter))
+            {
+                // Note: TeacherIncome doesn't have IsActive property in your model
+                // You might need to add it or use a different status filter
+            }
+
+            // Apply sorting
+            query = incomeSortColumn switch
+            {
+                "TeacherName" => incomeSortAscending
+                    ? query.OrderBy(i => i.TeacherName)
+                    : query.OrderByDescending(i => i.TeacherName),
+                "PeriodStartDate" => incomeSortAscending
+                    ? query.OrderBy(i => i.PeriodStartDate)
+                    : query.OrderByDescending(i => i.PeriodStartDate),
+                "PeriodEndDate" => incomeSortAscending
+                    ? query.OrderBy(i => i.PeriodEndDate)
+                    : query.OrderByDescending(i => i.PeriodEndDate),
+                _ => query.OrderByDescending(i => i.PeriodStartDate)
+            };
+
+            return query;
+        }
+    }
+
+    private IEnumerable<TeacherIncome> FilteredPagedIncomes => FilteredIncomes
+        .Skip((incomeCurrentPage - 1) * incomePageSize)
+        .Take(incomePageSize);
+
+    private IEnumerable<Tax> FilteredTaxes
+    {
+        get
+        {
+            var query = taxes.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(taxSearchText))
+            {
+                var lower = taxSearchText.ToLower();
+                query = query.Where(t =>
+                    (!string.IsNullOrEmpty(t.Name) && t.Name.ToLower().Contains(lower)) ||
+                    (!string.IsNullOrEmpty(t.Description) && t.Description.ToLower().Contains(lower)));
+            }
+
+            // Apply sorting
+            query = taxSortColumn switch
+            {
+                "Name" => taxSortAscending
+                    ? query.OrderBy(t => t.Name)
+                    : query.OrderByDescending(t => t.Name),
+                "Rate" => taxSortAscending
+                    ? query.OrderBy(t => t.Rate)
+                    : query.OrderByDescending(t => t.Rate),
+                _ => query.OrderBy(t => t.Name)
+            };
+
+            return query;
+        }
+    }
+
+    private IEnumerable<Tax> FilteredPagedTaxes => FilteredTaxes
+        .Skip((taxCurrentPage - 1) * taxPageSize)
+        .Take(taxPageSize);
+
+    private IEnumerable<Allowance> FilteredAllowances
+    {
+        get
+        {
+            var query = allowances.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(allowanceSearchText))
+            {
+                var lower = allowanceSearchText.ToLower();
+                query = query.Where(a =>
+                    (!string.IsNullOrEmpty(a.Name) && a.Name.ToLower().Contains(lower)) ||
+                    (!string.IsNullOrEmpty(a.Description) && a.Description.ToLower().Contains(lower)));
+            }
+
+            // Apply sorting
+            query = allowanceSortColumn switch
+            {
+                "Name" => allowanceSortAscending
+                    ? query.OrderBy(a => a.Name)
+                    : query.OrderByDescending(a => a.Name),
+                "Amount" => allowanceSortAscending
+                    ? query.OrderBy(a => a.Amount)
+                    : query.OrderByDescending(a => a.Amount),
+                _ => query.OrderBy(a => a.Name)
+            };
+
+            return query;
+        }
+    }
+
+    private IEnumerable<Allowance> FilteredPagedAllowances => FilteredAllowances
+        .Skip((allowanceCurrentPage - 1) * allowancePageSize)
+        .Take(allowancePageSize);
+
+    private IEnumerable<HrService.PayrollAttendanceExportDto> FilteredAttendance
+    {
+        get
+        {
+            var query = attendanceExport.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(attendanceSearchText))
+            {
+                var lower = attendanceSearchText.ToLower();
+                query = query.Where(r =>
+                    (!string.IsNullOrEmpty(r.EmployeeName) && r.EmployeeName.ToLower().Contains(lower)));
+            }
+
+            // Apply sorting
+            query = attendanceSortColumn switch
+            {
+                "EmployeeName" => attendanceSortAscending
+                    ? query.OrderBy(r => r.EmployeeName)
+                    : query.OrderByDescending(r => r.EmployeeName),
+                _ => query.OrderBy(r => r.EmployeeName)
+            };
+
+            return query;
+        }
+    }
+
+    private IEnumerable<HrService.PayrollAttendanceExportDto> FilteredPagedAttendance => FilteredAttendance
+        .Skip((attendanceCurrentPage - 1) * attendancePageSize)
+        .Take(attendancePageSize);
+
+    private DateTime attendanceStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+    private DateTime attendanceEnd = DateTime.Today;
+    private List<HrService.PayrollAttendanceExportDto> attendanceExport = new();
+
+    private TeacherIncomeInputModel newIncome = new()
+    {
+        PeriodStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+        PeriodEndDate = DateTime.Today,
+        BasicSalary = 0,
+        OvertimePay = 0,
+        OtherIncome = 0
+    };
+
+    private Tax newTax = new()
+    {
+        IsPercentage = true,
+        IsActive = true
+    };
+
+    private Allowance newAllowance = new()
+    {
+        IsPercentage = false,
+        IsTaxable = true,
+        IsActive = true
+    };
+
+    private TeacherIncome? selectedIncome;
+    private decimal grossIncome;
+    private decimal totalAllowances;
+    private decimal taxableBase;
+    private decimal totalTax;
+    private decimal netIncome;
+
+    private bool isEditingIncome = false;
+    private int editingIncomeId;
+
+    private bool isEditingTax = false;
+    private int editingTaxId;
+
+    private bool isEditingAllowance = false;
+    private int editingAllowanceId;
+
+    private bool showNetIncomeModal = false;
+
+    private bool showArchiveModal = false;
+    private string archiveEntityType = string.Empty;
+    private int archiveEntityId;
+    private string archiveEntityName = string.Empty;
+
+    // Current user info
+    private string currentUserName = "Admin";
+    private string currentUserRole = "Accounting";
+    private int? currentUserId = null;
+
+    // Logout and sync
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+    private string userName = string.Empty;
+
+    private bool isSyncing = false;
+    private string syncMessage = string.Empty;
+    private string syncStatusClass = string.Empty;
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+    private System.Threading.Timer? searchTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Admin";
+        await GetCurrentUserInfo();
+        await LoadDataAsync();
+        await LoadPendingSyncCount();
+
+        syncStatusTimer = new System.Threading.Timer(async _ =>
+        {
+            await LoadPendingSyncCount();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    private async Task GetCurrentUserInfo()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                currentUserName = user.Identity.Name ?? "Admin";
+                currentUserRole = user.FindFirst("Role")?.Value ?? "Accounting";
+
+                var userIdClaim = user.FindFirst("UserId")?.Value;
+                if (int.TryParse(userIdClaim, out int userId))
+                {
+                    currentUserId = userId;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting user info: {ex.Message}");
+        }
+    }
+
+    private async Task LoadDataAsync()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+        try
+        {
+            incomes = await AccountingService.GetTeacherIncomesAsync();
+            incomeCurrentPage = 1;
+
+            taxes = await AccountingService.GetTaxesAsync();
+            taxCurrentPage = 1;
+
+            allowances = await AccountingService.GetAllowancesAsync();
+            allowanceCurrentPage = 1;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load accounting data: {ex.Message}";
+            await LogClientAction("ERROR", "Accounting", $"Failed to load data: {ex.Message}", null);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        showNetIncomeModal = false;
+        isEditingIncome = false;
+        isEditingTax = false;
+        isEditingAllowance = false;
+        showArchiveModal = false;
+        StateHasChanged();
+    }
+
+    private void AddNewIncome()
+    {
+        isEditingIncome = false;
+        editingIncomeId = 0;
+        newIncome = new TeacherIncomeInputModel
+        {
+            PeriodStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+            PeriodEndDate = DateTime.Today,
+            BasicSalary = 0,
+            OvertimePay = 0,
+            OtherIncome = 0
+        };
+    }
+
+    private void AddNewTax()
+    {
+        isEditingTax = false;
+        editingTaxId = 0;
+        newTax = new Tax
+        {
+            IsPercentage = true,
+            IsActive = true
+        };
+    }
+
+    private void AddNewAllowance()
+    {
+        isEditingAllowance = false;
+        editingAllowanceId = 0;
+        newAllowance = new Allowance
+        {
+            IsPercentage = false,
+            IsTaxable = true,
+            IsActive = true
+        };
+    }
+
+    // Search handlers
+    private void HandleIncomeSearch()
+    {
+        incomeCurrentPage = 1;
+        searchTimer?.Dispose();
+        searchTimer = new System.Threading.Timer(async _ =>
+        {
+            if (!string.IsNullOrWhiteSpace(incomeSearchText))
+            {
+                await LogClientAction("SEARCH", "TeacherIncome",
+                    $"Searched income with term: {incomeSearchText}",
+                    $"Results: {FilteredIncomes.Count()} records found");
+            }
+            searchTimer?.Dispose();
+        }, null, 1000, System.Threading.Timeout.Infinite);
+    }
+
+    private void HandleTaxSearch()
+    {
+        taxCurrentPage = 1;
+        searchTimer?.Dispose();
+        searchTimer = new System.Threading.Timer(async _ =>
+        {
+            if (!string.IsNullOrWhiteSpace(taxSearchText))
+            {
+                await LogClientAction("SEARCH", "Taxes",
+                    $"Searched taxes with term: {taxSearchText}",
+                    $"Results: {FilteredTaxes.Count()} records found");
+            }
+            searchTimer?.Dispose();
+        }, null, 1000, System.Threading.Timeout.Infinite);
+    }
+
+    private void HandleAllowanceSearch()
+    {
+        allowanceCurrentPage = 1;
+        searchTimer?.Dispose();
+        searchTimer = new System.Threading.Timer(async _ =>
+        {
+            if (!string.IsNullOrWhiteSpace(allowanceSearchText))
+            {
+                await LogClientAction("SEARCH", "Allowances",
+                    $"Searched allowances with term: {allowanceSearchText}",
+                    $"Results: {FilteredAllowances.Count()} records found");
+            }
+            searchTimer?.Dispose();
+        }, null, 1000, System.Threading.Timeout.Infinite);
+    }
+
+    private void HandleAttendanceSearch()
+    {
+        attendanceCurrentPage = 1;
+        searchTimer?.Dispose();
+        searchTimer = new System.Threading.Timer(async _ =>
+        {
+            if (!string.IsNullOrWhiteSpace(attendanceSearchText))
+            {
+                await LogClientAction("SEARCH", "Attendance",
+                    $"Searched attendance with term: {attendanceSearchText}",
+                    $"Results: {FilteredAttendance.Count()} records found");
+            }
+            searchTimer?.Dispose();
+        }, null, 1000, System.Threading.Timeout.Infinite);
+    }
+
+    private async void ApplyIncomeFilters()
+    {
+        incomeCurrentPage = 1;
+        await LogClientAction("FILTER", "TeacherIncome",
+            $"Applied filters to income list",
+            $"Status: {incomeStatusFilter}, Search: {incomeSearchText}, Results: {FilteredIncomes.Count()}");
+    }
+
+    private async void ApplyTaxFilters()
+    {
+        taxCurrentPage = 1;
+        await LogClientAction("FILTER", "Taxes",
+            $"Applied filters to tax list",
+            $"Search: {taxSearchText}, Results: {FilteredTaxes.Count()}");
+    }
+
+    private async void ApplyAllowanceFilters()
+    {
+        allowanceCurrentPage = 1;
+        await LogClientAction("FILTER", "Allowances",
+            $"Applied filters to allowance list",
+            $"Search: {allowanceSearchText}, Results: {FilteredAllowances.Count()}");
+    }
+
+    private async void ApplyAttendanceFilters()
+    {
+        attendanceCurrentPage = 1;
+        await LogClientAction("FILTER", "Attendance",
+            $"Applied filters to attendance list",
+            $"Search: {attendanceSearchText}, Results: {FilteredAttendance.Count()}");
+    }
+
+    private async void ClearIncomeFilters()
+    {
+        incomeSearchText = "";
+        incomeStatusFilter = "";
+        incomeSortColumn = "PeriodStartDate";
+        incomeSortAscending = false;
+        incomeCurrentPage = 1;
+        await LogClientAction("CLEAR_FILTERS", "TeacherIncome", "Cleared all search and filter criteria", null);
+    }
+
+    private async void ClearTaxFilters()
+    {
+        taxSearchText = "";
+        taxSortColumn = "Name";
+        taxSortAscending = true;
+        taxCurrentPage = 1;
+        await LogClientAction("CLEAR_FILTERS", "Taxes", "Cleared all search and filter criteria", null);
+    }
+
+    private async void ClearAllowanceFilters()
+    {
+        allowanceSearchText = "";
+        allowanceSortColumn = "Name";
+        allowanceSortAscending = true;
+        allowanceCurrentPage = 1;
+        await LogClientAction("CLEAR_FILTERS", "Allowances", "Cleared all search and filter criteria", null);
+    }
+
+    private async void ClearAttendanceFilters()
+    {
+        attendanceSearchText = "";
+        attendanceSortColumn = "EmployeeName";
+        attendanceSortAscending = true;
+        attendanceCurrentPage = 1;
+        await LogClientAction("CLEAR_FILTERS", "Attendance", "Cleared all search and filter criteria", null);
+    }
+
+    // Sorting methods
+    private async void SortIncomeBy(string column)
+    {
+        if (incomeSortColumn == column)
+            incomeSortAscending = !incomeSortAscending;
+        else
+        {
+            incomeSortColumn = column;
+            incomeSortAscending = true;
+        }
+        await LogClientAction("SORT", "TeacherIncome",
+            $"Sorted income list by {column}",
+            $"Direction: {(incomeSortAscending ? "ascending" : "descending")}");
+    }
+
+    private async void SortTaxBy(string column)
+    {
+        if (taxSortColumn == column)
+            taxSortAscending = !taxSortAscending;
+        else
+        {
+            taxSortColumn = column;
+            taxSortAscending = true;
+        }
+        await LogClientAction("SORT", "Taxes",
+            $"Sorted tax list by {column}",
+            $"Direction: {(taxSortAscending ? "ascending" : "descending")}");
+    }
+
+    private async void SortAllowanceBy(string column)
+    {
+        if (allowanceSortColumn == column)
+            allowanceSortAscending = !allowanceSortAscending;
+        else
+        {
+            allowanceSortColumn = column;
+            allowanceSortAscending = true;
+        }
+        await LogClientAction("SORT", "Allowances",
+            $"Sorted allowance list by {column}",
+            $"Direction: {(allowanceSortAscending ? "ascending" : "descending")}");
+    }
+
+    private async void SortAttendanceBy(string column)
+    {
+        if (attendanceSortColumn == column)
+            attendanceSortAscending = !attendanceSortAscending;
+        else
+        {
+            attendanceSortColumn = column;
+            attendanceSortAscending = true;
+        }
+        await LogClientAction("SORT", "Attendance",
+            $"Sorted attendance list by {column}",
+            $"Direction: {(attendanceSortAscending ? "ascending" : "descending")}");
+    }
+
+    private string GetSortIcon(string column, string tab)
+    {
+        string currentSortColumn = tab switch
+        {
+            "income" => incomeSortColumn,
+            "tax" => taxSortColumn,
+            "allowance" => allowanceSortColumn,
+            "attendance" => attendanceSortColumn,
+            _ => ""
+        };
+
+        bool currentSortAscending = tab switch
+        {
+            "income" => incomeSortAscending,
+            "tax" => taxSortAscending,
+            "allowance" => allowanceSortAscending,
+            "attendance" => attendanceSortAscending,
+            _ => true
+        };
+
+        if (currentSortColumn != column)
+            return "";
+        return currentSortAscending ? " ▲" : " ▼";
+    }
+
+    // Pagination methods
+    private async void ChangeIncomePage(int page)
+    {
+        if (page < 1 || page > TotalIncomePages)
+            return;
+        incomeCurrentPage = page;
+        await LogClientAction("PAGINATION", "TeacherIncome",
+            $"Navigated to page {page} of income list",
+            $"Showing records {((page - 1) * incomePageSize + 1)} to {Math.Min(page * incomePageSize, FilteredIncomes.Count())}");
+    }
+
+    private async void ChangeTaxPage(int page)
+    {
+        if (page < 1 || page > TotalTaxPages)
+            return;
+        taxCurrentPage = page;
+        await LogClientAction("PAGINATION", "Taxes",
+            $"Navigated to page {page} of tax list",
+            $"Showing records {((page - 1) * taxPageSize + 1)} to {Math.Min(page * taxPageSize, FilteredTaxes.Count())}");
+    }
+
+    private async void ChangeAllowancePage(int page)
+    {
+        if (page < 1 || page > TotalAllowancePages)
+            return;
+        allowanceCurrentPage = page;
+        await LogClientAction("PAGINATION", "Allowances",
+            $"Navigated to page {page} of allowance list",
+            $"Showing records {((page - 1) * allowancePageSize + 1)} to {Math.Min(page * allowancePageSize, FilteredAllowances.Count())}");
+    }
+
+    private async void ChangeAttendancePage(int page)
+    {
+        if (page < 1 || page > TotalAttendancePages)
+            return;
+        attendanceCurrentPage = page;
+        await LogClientAction("PAGINATION", "Attendance",
+            $"Navigated to page {page} of attendance list",
+            $"Showing records {((page - 1) * attendancePageSize + 1)} to {Math.Min(page * attendancePageSize, FilteredAttendance.Count())}");
+    }
+
+    private void OnAttendancePageSizeChanged()
+    {
+        if (attendancePageSize <= 0)
+        {
+            attendancePageSize = 10;
+        }
+        attendanceCurrentPage = 1;
+    }
+
+    // CRUD operations
+    private async Task SaveIncomeAsync()
+    {
+        if (isEditingIncome && editingIncomeId != 0)
+        {
+            await UpdateIncomeAsync();
+        }
+        else
+        {
+            await AddIncomeAsync();
+        }
+    }
+
+    private void BeginEditIncome(TeacherIncome income)
+    {
+        isEditingIncome = true;
+        editingIncomeId = income.TeacherIncomeId;
+
+        newIncome = new TeacherIncomeInputModel
+        {
+            TeacherName = income.TeacherName,
+            TeacherId = income.TeacherId,
+            PeriodStartDate = income.PeriodStartDate,
+            PeriodEndDate = income.PeriodEndDate,
+            BasicSalary = income.BasicSalary,
+            OvertimePay = income.OvertimePay,
+            OtherIncome = income.OtherIncome
+        };
+    }
+
+    private void CancelIncomeEdit()
+    {
+        isEditingIncome = false;
+        editingIncomeId = 0;
+
+        newIncome = new TeacherIncomeInputModel
+        {
+            PeriodStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+            PeriodEndDate = DateTime.Today,
+            BasicSalary = 0,
+            OvertimePay = 0,
+            OtherIncome = 0
+        };
+    }
+
+    private async Task AddIncomeAsync()
+    {
+        try
+        {
+            var income = new TeacherIncome
+            {
+                TeacherName = newIncome.TeacherName?.Trim() ?? string.Empty,
+                TeacherId = newIncome.TeacherId ?? 0,
+                PeriodStartDate = newIncome.PeriodStartDate ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                PeriodEndDate = newIncome.PeriodEndDate ?? DateTime.Today,
+                BasicSalary = newIncome.BasicSalary ?? 0,
+                OvertimePay = newIncome.OvertimePay ?? 0,
+                OtherIncome = newIncome.OtherIncome ?? 0
+            };
+
+            await AccountingService.CreateTeacherIncomeAsync(income);
+            ToastService.ShowSuccess("Teacher income saved.");
+
+            await LogClientAction("CREATE", "TeacherIncome",
+                $"Added income for {income.TeacherName}",
+                $"Period: {income.PeriodStartDate:MM/dd/yyyy} - {income.PeriodEndDate:MM/dd/yyyy}, Amount: {income.BasicSalary + income.OvertimePay + income.OtherIncome:N2}");
+
+            newIncome = new TeacherIncomeInputModel
+            {
+                PeriodStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                PeriodEndDate = DateTime.Today,
+                BasicSalary = 0,
+                OvertimePay = 0,
+                OtherIncome = 0
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save income: {ex.Message}");
+            await LogClientAction("CREATE_ERROR", "TeacherIncome",
+                $"Failed to add income: {ex.Message}", null);
+        }
+    }
+
+    private async Task UpdateIncomeAsync()
+    {
+        try
+        {
+            var income = new TeacherIncome
+            {
+                TeacherIncomeId = editingIncomeId,
+                TeacherName = newIncome.TeacherName?.Trim() ?? string.Empty,
+                TeacherId = newIncome.TeacherId ?? 0,
+                PeriodStartDate = newIncome.PeriodStartDate ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                PeriodEndDate = newIncome.PeriodEndDate ?? DateTime.Today,
+                BasicSalary = newIncome.BasicSalary ?? 0,
+                OvertimePay = newIncome.OvertimePay ?? 0,
+                OtherIncome = newIncome.OtherIncome ?? 0
+            };
+
+            var updated = await AccountingService.UpdateTeacherIncomeAsync(editingIncomeId, income);
+            if (updated == null)
+            {
+                ToastService.ShowWarning("Income record not found or already archived.");
+                return;
+            }
+
+            ToastService.ShowSuccess("Teacher income updated.");
+
+            await LogClientAction("UPDATE", "TeacherIncome",
+                $"Updated income for {income.TeacherName}",
+                $"ID: {editingIncomeId}, Period: {income.PeriodStartDate:MM/dd/yyyy} - {income.PeriodEndDate:MM/dd/yyyy}");
+
+            isEditingIncome = false;
+            editingIncomeId = 0;
+
+            newIncome = new TeacherIncomeInputModel
+            {
+                PeriodStartDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1),
+                PeriodEndDate = DateTime.Today,
+                BasicSalary = 0,
+                OvertimePay = 0,
+                OtherIncome = 0
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to update income: {ex.Message}");
+            await LogClientAction("UPDATE_ERROR", "TeacherIncome",
+                $"Failed to update income ID {editingIncomeId}: {ex.Message}", null);
+        }
+    }
+
+    private async Task SaveTaxAsync()
+    {
+        if (isEditingTax && editingTaxId != 0)
+        {
+            await UpdateTaxAsync();
+        }
+        else
+        {
+            await AddTaxAsync();
+        }
+    }
+
+    private void BeginEditTax(Tax tax)
+    {
+        isEditingTax = true;
+        editingTaxId = tax.TaxId;
+
+        newTax = new Tax
+        {
+            TaxId = tax.TaxId,
+            Name = tax.Name,
+            Description = tax.Description,
+            Rate = tax.Rate,
+            IsPercentage = tax.IsPercentage,
+            IsActive = tax.IsActive
+        };
+    }
+
+    private void CancelTaxEdit()
+    {
+        isEditingTax = false;
+        editingTaxId = 0;
+
+        newTax = new Tax
+        {
+            IsPercentage = true,
+            IsActive = true
+        };
+    }
+
+    private async Task AddTaxAsync()
+    {
+        try
+        {
+            await AccountingService.CreateTaxAsync(newTax);
+            ToastService.ShowSuccess("Tax saved.");
+
+            await LogClientAction("CREATE", "Taxes",
+                $"Added tax: {newTax.Name}",
+                $"Rate: {newTax.Rate}, Type: {(newTax.IsPercentage ? "Percentage" : "Fixed")}");
+
+            newTax = new Tax
+            {
+                IsPercentage = true,
+                IsActive = true
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save tax: {ex.Message}");
+            await LogClientAction("CREATE_ERROR", "Taxes",
+                $"Failed to add tax: {ex.Message}", null);
+        }
+    }
+
+    private async Task UpdateTaxAsync()
+    {
+        try
+        {
+            newTax.TaxId = editingTaxId;
+
+            var updated = await AccountingService.UpdateTaxAsync(editingTaxId, newTax);
+            if (updated == null)
+            {
+                ToastService.ShowWarning("Tax not found or already archived.");
+                return;
+            }
+
+            ToastService.ShowSuccess("Tax updated.");
+
+            await LogClientAction("UPDATE", "Taxes",
+                $"Updated tax: {newTax.Name}",
+                $"ID: {editingTaxId}, Rate: {newTax.Rate}");
+
+            isEditingTax = false;
+            editingTaxId = 0;
+
+            newTax = new Tax
+            {
+                IsPercentage = true,
+                IsActive = true
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to update tax: {ex.Message}");
+            await LogClientAction("UPDATE_ERROR", "Taxes",
+                $"Failed to update tax ID {editingTaxId}: {ex.Message}", null);
+        }
+    }
+
+    private async Task SaveAllowanceAsync()
+    {
+        if (isEditingAllowance && editingAllowanceId != 0)
+        {
+            await UpdateAllowanceAsync();
+        }
+        else
+        {
+            await AddAllowanceAsync();
+        }
+    }
+
+    private void BeginEditAllowance(Allowance allowance)
+    {
+        isEditingAllowance = true;
+        editingAllowanceId = allowance.AllowanceId;
+
+        newAllowance = new Allowance
+        {
+            AllowanceId = allowance.AllowanceId,
+            Name = allowance.Name,
+            Description = allowance.Description,
+            Amount = allowance.Amount,
+            IsPercentage = allowance.IsPercentage,
+            IsTaxable = allowance.IsTaxable,
+            IsActive = allowance.IsActive
+        };
+    }
+
+    private void CancelAllowanceEdit()
+    {
+        isEditingAllowance = false;
+        editingAllowanceId = 0;
+
+        newAllowance = new Allowance
+        {
+            IsPercentage = false,
+            IsTaxable = true,
+            IsActive = true
+        };
+    }
+
+    private async Task AddAllowanceAsync()
+    {
+        try
+        {
+            await AccountingService.CreateAllowanceAsync(newAllowance);
+            ToastService.ShowSuccess("Allowance saved.");
+
+            await LogClientAction("CREATE", "Allowances",
+                $"Added allowance: {newAllowance.Name}",
+                $"Amount: {newAllowance.Amount}, Type: {(newAllowance.IsPercentage ? "Percentage" : "Fixed")}");
+
+            newAllowance = new Allowance
+            {
+                IsPercentage = false,
+                IsTaxable = true,
+                IsActive = true
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to save allowance: {ex.Message}");
+            await LogClientAction("CREATE_ERROR", "Allowances",
+                $"Failed to add allowance: {ex.Message}", null);
+        }
+    }
+
+    private async Task UpdateAllowanceAsync()
+    {
+        try
+        {
+            newAllowance.AllowanceId = editingAllowanceId;
+
+            var updated = await AccountingService.UpdateAllowanceAsync(editingAllowanceId, newAllowance);
+            if (updated == null)
+            {
+                ToastService.ShowWarning("Allowance not found or already archived.");
+                return;
+            }
+
+            ToastService.ShowSuccess("Allowance updated.");
+
+            await LogClientAction("UPDATE", "Allowances",
+                $"Updated allowance: {newAllowance.Name}",
+                $"ID: {editingAllowanceId}, Amount: {newAllowance.Amount}");
+
+            isEditingAllowance = false;
+            editingAllowanceId = 0;
+
+            newAllowance = new Allowance
+            {
+                IsPercentage = false,
+                IsTaxable = true,
+                IsActive = true
+            };
+
+            await LoadDataAsync();
+        }
+        catch (ValidationException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to update allowance: {ex.Message}");
+            await LogClientAction("UPDATE_ERROR", "Allowances",
+                $"Failed to update allowance ID {editingAllowanceId}: {ex.Message}", null);
+        }
+    }
+
+    private void OpenNetIncomeModal(TeacherIncome income)
+    {
+        selectedIncome = income;
+        var result = AccountingService.CalculateNetIncome(income, allowances, taxes);
+        grossIncome = result.GrossIncome;
+        totalAllowances = result.TotalAllowances;
+        taxableBase = result.TaxableBase;
+        totalTax = result.TotalTax;
+        netIncome = result.NetIncome;
+        showNetIncomeModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseNetIncomeModal()
+    {
+        showNetIncomeModal = false;
+        selectedIncome = null;
+        grossIncome = 0;
+        totalAllowances = 0;
+        taxableBase = 0;
+        totalTax = 0;
+        netIncome = 0;
+        StateHasChanged();
+    }
+
+    private void ConfirmArchiveIncome(int id, string name)
+    {
+        archiveEntityType = "teacher income";
+        archiveEntityId = id;
+        archiveEntityName = name;
+        showArchiveModal = true;
+        StateHasChanged();
+    }
+
+    private void ConfirmArchiveTax(int id, string name)
+    {
+        archiveEntityType = "tax";
+        archiveEntityId = id;
+        archiveEntityName = name;
+        showArchiveModal = true;
+        StateHasChanged();
+    }
+
+    private void ConfirmArchiveAllowance(int id, string name)
+    {
+        archiveEntityType = "allowance";
+        archiveEntityId = id;
+        archiveEntityName = name;
+        showArchiveModal = true;
+        StateHasChanged();
+    }
+
+    private void CancelArchive()
+    {
+        showArchiveModal = false;
+        archiveEntityType = string.Empty;
+        archiveEntityId = 0;
+        archiveEntityName = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmArchiveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(archiveEntityType) || archiveEntityId == 0)
+        {
+            showArchiveModal = false;
+            return;
+        }
+
+        var label = archiveEntityType;
+
+        try
+        {
+            var success = false;
+
+            if (archiveEntityType == "teacher income")
+            {
+                success = await AccountingService.SoftDeleteTeacherIncomeAsync(archiveEntityId);
+            }
+            else if (archiveEntityType == "tax")
+            {
+                success = await AccountingService.SoftDeleteTaxAsync(archiveEntityId);
+            }
+            else if (archiveEntityType == "allowance")
+            {
+                success = await AccountingService.SoftDeleteAllowanceAsync(archiveEntityId);
+            }
+
+            if (success)
+            {
+                ToastService.ShowSuccess($"The {label} has been archived.");
+
+                // Log the archive action
+                await LogClientAction("ARCHIVE", archiveEntityType == "teacher income" ? "TeacherIncome" :
+                    archiveEntityType == "tax" ? "Taxes" : "Allowances",
+                    $"Archived {label}: {archiveEntityName}",
+                    $"ID: {archiveEntityId}");
+
+                // Remove from current in-memory lists
+                if (archiveEntityType == "teacher income")
+                {
+                    incomes = incomes.Where(i => i.TeacherIncomeId != archiveEntityId).ToList();
+                }
+                else if (archiveEntityType == "tax")
+                {
+                    taxes = taxes.Where(t => t.TaxId != archiveEntityId).ToList();
+                }
+                else if (archiveEntityType == "allowance")
+                {
+                    allowances = allowances.Where(a => a.AllowanceId != archiveEntityId).ToList();
+                }
+
+                await LoadDataAsync();
+            }
+            else
+            {
+                ToastService.ShowWarning($"Could not archive the {label}. It may have been removed already.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to archive the {label}: {ex.Message}");
+            await LogClientAction("ARCHIVE_ERROR", archiveEntityType == "teacher income" ? "TeacherIncome" :
+                archiveEntityType == "tax" ? "Taxes" : "Allowances",
+                $"Failed to archive {label} {archiveEntityName}: {ex.Message}",
+                $"ID: {archiveEntityId}");
+        }
+        finally
+        {
+            showArchiveModal = false;
+            archiveEntityType = string.Empty;
+            archiveEntityId = 0;
+            archiveEntityName = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadAttendanceExportAsync()
+    {
+        if (attendanceStart == default || attendanceEnd == default)
+        {
+            ToastService.ShowError("Please select both period start and end dates.");
+            return;
+        }
+
+        if (attendanceEnd < attendanceStart)
+        {
+            ToastService.ShowError("Period end date cannot be earlier than start date.");
+            return;
+        }
+
+        try
+        {
+            attendanceExport = await HrService.GetPayrollAttendanceAsync(attendanceStart, attendanceEnd);
+            attendanceCurrentPage = 1;
+
+            await LogClientAction("LOAD", "Attendance",
+                $"Loaded attendance export",
+                $"Period: {attendanceStart:MM/dd/yyyy} - {attendanceEnd:MM/dd/yyyy}, Records: {attendanceExport.Count}");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Failed to load attendance export: {ex.Message}");
+            await LogClientAction("LOAD_ERROR", "Attendance",
+                $"Failed to load attendance: {ex.Message}",
+                $"Period: {attendanceStart:MM/dd/yyyy} - {attendanceEnd:MM/dd/yyyy}");
+        }
+    }
+
+    private async Task ExportIncomeToExcelAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportTeacherIncomeToExcel(incomes, allowances, taxes);
+            var fileName = $"TeacherIncome_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            await LogClientAction("EXPORT", "TeacherIncome",
+                $"Exported {incomes.Count} income records to Excel",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "TeacherIncome",
+                $"Failed to export income to Excel: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportIncomeToPdfAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportTeacherIncomeToPDF(incomes, allowances, taxes);
+            var fileName = $"TeacherIncome_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/pdf");
+
+            await LogClientAction("EXPORT", "TeacherIncome",
+                $"Exported {incomes.Count} income records to PDF",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "TeacherIncome",
+                $"Failed to export income to PDF: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportTaxesToExcelAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportTaxesToExcel(taxes);
+            var fileName = $"Taxes_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            await LogClientAction("EXPORT", "Taxes",
+                $"Exported {taxes.Count} tax records to Excel",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Taxes",
+                $"Failed to export taxes to Excel: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportTaxesToPdfAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportTaxesToPDF(taxes);
+            var fileName = $"Taxes_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/pdf");
+
+            await LogClientAction("EXPORT", "Taxes",
+                $"Exported {taxes.Count} tax records to PDF",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Taxes",
+                $"Failed to export taxes to PDF: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportAllowancesToExcelAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportAllowancesToExcel(allowances);
+            var fileName = $"Allowances_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            await LogClientAction("EXPORT", "Allowances",
+                $"Exported {allowances.Count} allowance records to Excel",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Allowances",
+                $"Failed to export allowances to Excel: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportAllowancesToPdfAsync()
+    {
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportAllowancesToPDF(allowances);
+            var fileName = $"Allowances_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/pdf");
+
+            await LogClientAction("EXPORT", "Allowances",
+                $"Exported {allowances.Count} allowance records to PDF",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Allowances",
+                $"Failed to export allowances to PDF: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportAttendanceToExcelAsync()
+    {
+        if (attendanceExport.Count == 0)
+        {
+            ToastService.ShowWarning("No attendance records loaded.");
+            return;
+        }
+
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportPayrollAttendanceToExcel(attendanceExport);
+            var fileName = $"Attendance_{attendanceStart:yyyyMMdd}_{attendanceEnd:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            await LogClientAction("EXPORT", "Attendance",
+                $"Exported {attendanceExport.Count} attendance records to Excel",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Attendance",
+                $"Failed to export attendance to Excel: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExportAttendanceToPdfAsync()
+    {
+        if (attendanceExport.Count == 0)
+        {
+            ToastService.ShowWarning("No attendance records loaded.");
+            return;
+        }
+
+        isExporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var bytes = ExportService.ExportPayrollAttendanceToPDF(attendanceExport);
+            var fileName = $"Attendance_{attendanceStart:yyyyMMdd}_{attendanceEnd:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+            var base64 = Convert.ToBase64String(bytes);
+
+            await JS.InvokeVoidAsync("downloadFile", fileName, base64, "application/pdf");
+
+            await LogClientAction("EXPORT", "Attendance",
+                $"Exported {attendanceExport.Count} attendance records to PDF",
+                $"File: {fileName}, Size: {bytes.Length} bytes");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Export failed: {ex.Message}");
+            await LogClientAction("EXPORT_ERROR", "Attendance",
+                $"Failed to export attendance to PDF: {ex.Message}", null);
+        }
+        finally
+        {
+            isExporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LogClientAction(string action, string tableName, string description, string? details)
+    {
+        try
+        {
+            var logData = new
+            {
+                Action = action,
+                TableName = tableName,
+                Description = description,
+                Details = details,
+                User = currentUserName,
+                Role = currentUserRole,
+                Timestamp = DateTime.UtcNow,
+                Page = "Accounting",
+                Tab = activeTab
+            };
+
+            var logJson = System.Text.Json.JsonSerializer.Serialize(logData);
+
+            await AuditLogService.LogActionAsync(
+                action: action,
+                tableName: tableName,
+                recordId: 0,
+                userId: currentUserId,
+                oldValues: null,
+                newValues: logJson
+            );
+
+            Console.WriteLine($"📊 ACCOUNTING AUDIT: {action} - {description}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Failed to log accounting action: {ex.Message}");
+        }
+    }
+
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+
+                await LoadPendingSyncCount();
+                await LoadDataAsync();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = string.Empty;
+                syncStatusClass = string.Empty;
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutConfirmation = false;
+        isLoggingOut = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await LogClientAction("LOGOUT", "System",
+                "User logged out from accounting page", null);
+
+            if (AuthStateProvider is AuthStateProvider authProvider && authProvider.GetType().GetMethod("LogoutAsync") != null)
+            {
+                await ((dynamic)AuthStateProvider).LogoutAsync();
+            }
+            else
+            {
+                AuthStateProvider.MarkUserAsLoggedOut();
+            }
+
+            Navigation.NavigateTo("/", true);
+        }
+        catch
+        {
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    public void Dispose()
+    {
+        syncStatusTimer?.Dispose();
+        searchTimer?.Dispose();
+    }
+
+    private class TeacherIncomeInputModel : IValidatableObject
+    {
+        [Required(ErrorMessage = "Teacher name is required")]
+        [MaxLength(200, ErrorMessage = "Teacher name must be 200 characters or fewer")]
+        public string? TeacherName { get; set; }
+
+        [Required(ErrorMessage = "Teacher ID is required")]
+        [Range(1, int.MaxValue, ErrorMessage = "Teacher ID must be greater than 0")]
+        public int? TeacherId { get; set; }
+
+        [Required(ErrorMessage = "Period start date is required")]
+        public DateTime? PeriodStartDate { get; set; }
+
+        [Required(ErrorMessage = "Period end date is required")]
+        public DateTime? PeriodEndDate { get; set; }
+
+        [Required(ErrorMessage = "Basic salary is required")]
+        [Range(typeof(decimal), "0.01", "999999999", ErrorMessage = "Basic salary must be greater than 0")]
+        public decimal? BasicSalary { get; set; }
+
+        [Range(typeof(decimal), "0", "999999999", ErrorMessage = "Overtime pay cannot be negative")]
+        public decimal? OvertimePay { get; set; }
+
+        [Range(typeof(decimal), "0", "999999999", ErrorMessage = "Other income cannot be negative")]
+        public decimal? OtherIncome { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (PeriodStartDate.HasValue && PeriodEndDate.HasValue && PeriodEndDate.Value < PeriodStartDate.Value)
+            {
+                yield return new ValidationResult(
+                    "Period end date cannot be earlier than start date",
+                    new[] { nameof(PeriodEndDate) });
+            }
+        }
+    }
+}

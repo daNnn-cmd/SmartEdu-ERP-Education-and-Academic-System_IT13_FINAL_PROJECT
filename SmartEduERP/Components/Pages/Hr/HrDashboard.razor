@@ -1,0 +1,278 @@
+﻿@page "/hr"
+@using System.Linq
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,HR")]
+@inject HrService HrService
+
+<PageTitle>HR Dashboard - SmartEduERP</PageTitle>
+
+<style>
+    .hr-page {
+        padding: 1.5rem;
+    }
+
+    .hr-header-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .hr-header-subtitle {
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+    }
+
+    .hr-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .hr-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        padding: 1rem 1.25rem;
+    }
+
+    .hr-card-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #6b7280;
+        margin-bottom: 0.3rem;
+    }
+
+    .hr-card-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .hr-two-column {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+        gap: 1rem;
+    }
+
+    .hr-section-card {
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .hr-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+
+    .hr-link-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .hr-link-tile {
+        border-radius: 10px;
+        border: 1px solid #e5e5e5;
+        padding: 0.9rem 1rem;
+        background: #f9fafb;
+        text-decoration: none;
+        color: #111827;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-size: 0.9rem;
+    }
+
+    .hr-link-title {
+        font-weight: 600;
+    }
+
+    .hr-link-subtitle {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .hr-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .hr-table th {
+        text-align: left;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #e5e5e5;
+        font-weight: 500;
+        color: #6b7280;
+        background: #f9fafb;
+    }
+
+    .hr-table td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .hr-badge {
+        display: inline-block;
+        padding: 0.1rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .hr-badge-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .hr-badge-approved {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .hr-badge-rejected {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .hr-empty {
+        color: #6b7280;
+        font-size: 0.85rem;
+        padding: 0.5rem 0;
+    }
+
+    @@media (max-width: 900px) {
+        .hr-two-column {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>
+
+<HrLayout>
+<div class="hr-page">
+    <div class="hr-header">
+        <div class="hr-header-title">HR Dashboard</div>
+        <div class="hr-header-subtitle">
+            Overview of employees, attendance, recruitment, and HR activity.
+        </div>
+    </div>
+
+    <div class="hr-cards-grid">
+        <div class="hr-card">
+            <div class="hr-card-label">Total Employees</div>
+            <div class="hr-card-value">@totalEmployees</div>
+        </div>
+        <div class="hr-card">
+            <div class="hr-card-label">Todays Attendance (Present / Late / Absent)</div>
+            <div class="hr-card-value">@todayPresent / @todayLate / @todayAbsent</div>
+        </div>
+        <div class="hr-card">
+            <div class="hr-card-label">Open Job Posts</div>
+            <div class="hr-card-value">@openJobPostings</div>
+        </div>
+        <div class="hr-card">
+            <div class="hr-card-label">Pending Leave Requests</div>
+            <div class="hr-card-value">@pendingLeaveRequests</div>
+        </div>
+    </div>
+
+    <div class="hr-two-column">
+        <div class="hr-section-card">
+            <div class="hr-section-title">Quick Access</div>
+            <div class="hr-link-grid">
+                <a href="/hr/employees" class="hr-link-tile">
+                    <span class="hr-link-title">Employee Records</span>
+                    <span class="hr-link-subtitle">Add, edit, and manage staff profiles and documents.</span>
+                </a>
+                <a href="/hr/recruitment" class="hr-link-tile">
+                    <span class="hr-link-title">Recruitment</span>
+                    <span class="hr-link-subtitle">Manage job posts and applicants.</span>
+                </a>
+                <a href="/hr/attendance" class="hr-link-tile">
+                    <span class="hr-link-title">Attendance</span>
+                    <span class="hr-link-subtitle">Record daily time-in/out and track lateness.</span>
+                </a>
+                <a href="/hr/leave" class="hr-link-tile">
+                    <span class="hr-link-title">Leave Requests</span>
+                    <span class="hr-link-subtitle">Submit and approve employee leave.</span>
+                </a>
+                <a href="/hr/performance" class="hr-link-tile">
+                    <span class="hr-link-title">Performance Reviews</span>
+                    <span class="hr-link-subtitle">Record basic evaluations for employees.</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="hr-section-card">
+            <div class="hr-section-title">Recent Activity (Reviews)</div>
+            @if (recentReviews.Any())
+            {
+                <table class="hr-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Score</th>
+                            <th>Date</th>
+                            <th>Reviewer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in recentReviews)
+                        {
+                            <tr>
+                                <td>@(r.Employee != null ? $"{r.Employee.FirstName} {r.Employee.LastName}" : "Unknown")</td>
+                                <td>@r.Score</td>
+                                <td>@r.ReviewDate.ToString("MMM dd, yyyy")</td>
+                                <td>@r.ReviewerName</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="hr-empty">No performance reviews recorded yet.</div>
+            }
+        </div>
+    </div>
+</div>
+</HrLayout>
+
+@code {
+    private int totalEmployees;
+    private int todayPresent;
+    private int todayLate;
+    private int todayAbsent;
+    private int openJobPostings;
+    private int pendingLeaveRequests;
+
+    private List<PerformanceReview> recentReviews = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        totalEmployees = await HrService.GetTotalEmployeesAsync();
+
+        var attendanceSummary = await HrService.GetAttendanceSummaryAsync(DateTime.Today);
+        todayPresent = attendanceSummary.present;
+        todayLate = attendanceSummary.late;
+        todayAbsent = attendanceSummary.absent;
+
+        var jobPostings = await HrService.GetJobPostingsAsync();
+        openJobPostings = jobPostings.Count(j => j.IsActive);
+
+        var leaveRequests = await HrService.GetLeaveRequestsAsync();
+        pendingLeaveRequests = leaveRequests.Count(l => l.Status == "Pending");
+
+        var allReviews = await HrService.GetPerformanceReviewsAsync();
+        recentReviews = allReviews
+            .OrderByDescending(r => r.ReviewDate)
+            .Take(5)
+            .ToList();
+    }
+}

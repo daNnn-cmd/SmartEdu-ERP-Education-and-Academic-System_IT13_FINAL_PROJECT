@@ -1,0 +1,407 @@
+﻿@page "/students/schedule"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@using Microsoft.AspNetCore.Components.Web
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject EnrollmentService EnrollmentService
+@inject AuthStateProvider AuthStateProvider
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Class Schedule - SmartEduERP</PageTitle>
+
+<style>
+    /* ... */
+    .dashboard-wrapper { display: flex; min-height: 100vh; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .sidebar { width: 260px; background: #fff; border-right: 1px solid #e5e5e5; position: fixed; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+    .sidebar-header { padding: 1.25rem 1rem; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 0.75rem; }
+    .sidebar-logo { width: 48px; height: 48px; }
+    .sidebar-title { font-size: 1rem; font-weight: 600; margin: 0; color: #000; }
+    .sidebar-subtitle { font-size: 0.75rem; color: #737373; margin: 0; }
+    .sidebar-content { flex: 1; padding: 1rem 0; }
+    .sidebar-section-label { padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600; color: #737373; text-transform: uppercase; letter-spacing: 0.05em; }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+    .sidebar-menu-item { padding: 0 0.75rem; }
+    .sidebar-menu-button { width: 100%; padding: 0.625rem 0.75rem; background: none; border: none; display: flex; align-items: center; gap: 0.75rem; font-size: 0.875rem; color: #404040; cursor: pointer; border-radius: 6px; transition: all 0.2s; text-decoration: none; }
+    .sidebar-menu-button:hover { background: #f5f5f5; color: #000; }
+    .sidebar-menu-button.active { background: #f0f0f0; color: #000; font-weight: 500; }
+    .sidebar-menu-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem; border-top: 1px solid #e5e5e5; }
+    .user-info { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; margin-bottom: 0.75rem; }
+    .user-avatar { width: 32px; height: 32px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; }
+    .user-details { flex: 1; min-width: 0; }
+    .user-name { font-size: 0.875rem; font-weight: 500; color: #000; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-role { font-size: 0.75rem; color: #737373; margin: 0; }
+    .logout-button { width: 100%; padding: 0.625rem; background: #fff; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 0.875rem; color: #404040; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; }
+    .logout-button:hover { background: #f5f5f5; border-color: #d4d4d4; }
+
+    .main-content { margin-left: 260px; flex: 1; padding: 1.5rem; }
+    .dashboard-header { margin-bottom: 1rem; }
+    .dashboard-header h1 { font-size: 1.75rem; font-weight: 600; color: #000; margin: 0 0 0.25rem 0; }
+    .dashboard-header p { font-size: 0.9375rem; color: #737373; margin: 0; }
+
+    .header-controls { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 1.5rem; gap: 1rem; }
+    .segmented { display: inline-flex; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; }
+    .seg-btn { padding: 0.5rem 1rem; font-size: 0.875rem; border: none; background: transparent; cursor: pointer; color: #404040; }
+    .seg-btn.active { background: #fff; color: #000; }
+    .week-controls { display: inline-flex; align-items: center; gap: 0.5rem; }
+    .nav-button { padding: 0.5rem; border: 1px solid #e5e5e5; background: #fff; border-radius: 6px; cursor: pointer; }
+    .nav-button:hover { background: #f5f5f5; }
+    .week-range { font-size: 0.875rem; color: #404040; margin: 0 0.5rem; }
+
+    .schedule-container { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 1rem; }
+    .week-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
+    .day-column { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 0.75rem; min-height: 140px; }
+    .day-title { font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #000; }
+    .class-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; }
+    .class-info { display: flex; flex-direction: column; gap: 0.125rem; }
+    .class-subject { margin: 0; font-size: 0.9375rem; font-weight: 600; color: #000; }
+    .text-muted { color: #737373; font-size: 0.8125rem; margin: 0; }
+
+    .list-view .day-title { margin-bottom: 0.75rem; }
+    .loading-container { display: flex; justify-content: center; align-items: center; min-height: 300px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid #f5f5f5; border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .empty-state { text-align: center; padding: 2rem; color: #737373; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- ... -->
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Student Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/student-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/enrollments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>My Enrollments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/viewgrades" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>My Grades</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students/payment" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students/schedule" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Class Schedule</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students/profile" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Student</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Class Schedule</h1>
+            <p>View your weekly class schedule and upcoming sessions.</p>
+        </div>
+        <div class="header-controls">
+            <div class="segmented">
+                <button class="seg-btn @(currentView == "week" ? "active" : string.Empty)" @onclick='@(() => SetView("week"))'>Week</button>
+                <button class="seg-btn @(currentView == "list" ? "active" : string.Empty)" @onclick='@(() => SetView("list"))'>List</button>
+            </div>
+            <div class="week-controls">
+                <button class="nav-button" title="Previous Week" @onclick="PreviousWeek">&#x2039;</button>
+                <button class="nav-button" title="Today" @onclick="GoToToday">Today</button>
+                <button class="nav-button" title="Next Week" @onclick="NextWeek">&#x203A;</button>
+                <span class="week-range">@currentWeekRange</span>
+            </div>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            @if (currentView == "week")
+            {
+                <!-- Week View -->
+                <div class="schedule-container">
+                    <!-- ... -->
+                    <div class="week-grid">
+                        @foreach (var day in currentWeekDays)
+                        {
+                            <div class="day-column">
+                                <h3 class="day-title">@($"{day:ddd}, {day:MMM d}")</h3>
+
+                                @if (classSchedule.Any(cs => cs.DayOfWeek == day.DayOfWeek))
+                                {
+                                    @foreach (var cls in classSchedule.Where(cs => cs.DayOfWeek == day.DayOfWeek).OrderBy(cs => cs.StartTime))
+                                    {
+                                        <div class="class-card">
+                                            <div class="class-info">
+                                                <h4 class="class-subject">@cls.SubjectName</h4>
+                                                <p class="text-muted">@($"{cls.StartTime:hh\\:mm}–{cls.EndTime:hh\\:mm}") • Room: @cls.Room</p>
+
+                                                <p class="text-muted">Instructor: @cls.Instructor</p>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-muted">No classes</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            else
+            {
+                <!-- List View -->
+                <div class="schedule-container">
+                    <div class="list-view">
+                        @if (myEnrollments.Any())
+                        {
+                            <div class="day-schedule">
+                                <h3 class="day-title">My Enrolled Subjects</h3>
+                                @foreach (var e in myEnrollments)
+                                {
+                                    <div class="class-card">
+                                        <div class="class-info">
+                                            <h4 class="class-subject">@(e.Subject?.SubjectName ?? "Unknown Subject")</h4>
+                                            @if (e.Subject != null)
+                                            {
+                                                <p class="text-muted">Code: @e.Subject.SubjectCode</p>
+                                                <p class="text-muted">Section: @e.Subject.Section • Level: @e.Subject.GradeLevel</p>
+                                            }
+                                            @if (e.Subject?.Teacher != null)
+                                            {
+                                                <p class="text-muted">Instructor: @e.Subject.Teacher.FirstName @e.Subject.Teacher.LastName</p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                                <h3>No Enrollments Found</h3>
+                                <p>You haven't enrolled in any courses yet.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Logout Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+@code {
+    private List<ClassSchedule> classSchedule = new();
+    private List<Enrollment> myEnrollments = new();
+
+    private bool loading = true;
+    private string userName = "";
+    private string currentView = "week";
+    private DateTime currentWeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+    private string currentWeekRange => $"{currentWeekStart:MMM d} - {currentWeekStart.AddDays(4):MMM d, yyyy}";
+
+    // Logout confirmation
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+
+    private List<DateTime> currentWeekDays => Enumerable.Range(0, 5)
+        .Select(i => currentWeekStart.AddDays(i))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Student";
+        var userId = AuthStateProvider.GetCurrentUserId();
+        if (userId.HasValue)
+        {
+            // Load enrollments for list view (current student only)
+            var user = await AuthService.GetUserByIdAsync(userId.Value);
+            var studentId = user?.ReferenceId ?? 0;
+            if (studentId > 0)
+            {
+                myEnrollments = (await EnrollmentService.GetEnrollmentsByStudentIdAsync(studentId))
+                    .Where(e => e.EnrollmentStatus != null && e.EnrollmentStatus.Equals("Approved", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            await LoadClassSchedule(userId.Value);
+        }
+        loading = false;
+    }
+
+    private Task LoadClassSchedule(int studentId)
+    {
+        classSchedule = new List<ClassSchedule>
+        {
+            new ClassSchedule { SubjectName = "Mathematics", Instructor = "Dr. Smith", DayOfWeek = DayOfWeek.Monday, StartTime = new TimeSpan(9,0,0), EndTime = new TimeSpan(10,30,0), Room = "A101", Duration = 90 },
+            new ClassSchedule { SubjectName = "Physics", Instructor = "Prof. Johnson", DayOfWeek = DayOfWeek.Monday, StartTime = new TimeSpan(11,0,0), EndTime = new TimeSpan(12,30,0), Room = "B205", Duration = 90 },
+            new ClassSchedule { SubjectName = "Computer Science", Instructor = "Dr. Williams", DayOfWeek = DayOfWeek.Tuesday, StartTime = new TimeSpan(10,0,0), EndTime = new TimeSpan(11,30,0), Room = "C301", Duration = 90 },
+            new ClassSchedule { SubjectName = "English Literature", Instructor = "Prof. Davis", DayOfWeek = DayOfWeek.Wednesday, StartTime = new TimeSpan(14,0,0), EndTime = new TimeSpan(15,30,0), Room = "D102", Duration = 90 },
+            new ClassSchedule { SubjectName = "Chemistry", Instructor = "Dr. Brown", DayOfWeek = DayOfWeek.Thursday, StartTime = new TimeSpan(13,0,0), EndTime = new TimeSpan(14,30,0), Room = "Lab 1", Duration = 90 },
+            new ClassSchedule { SubjectName = "History", Instructor = "Prof. Wilson", DayOfWeek = DayOfWeek.Friday, StartTime = new TimeSpan(9,30,0), EndTime = new TimeSpan(11,0,0), Room = "E201", Duration = 90 }
+        };
+        return Task.CompletedTask;
+    }
+
+    private void PreviousWeek()
+    {
+        currentWeekStart = currentWeekStart.AddDays(-7);
+        StateHasChanged();
+    }
+
+    private void SetView(string view)
+    {
+        currentView = view;
+        StateHasChanged();
+    }
+
+    private void NextWeek()
+    {
+        currentWeekStart = currentWeekStart.AddDays(7);
+        StateHasChanged();
+    }
+
+    private void GoToToday()
+    {
+        currentWeekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1);
+        StateHasChanged();
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch
+        {
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+
+    private class ClassSchedule
+    {
+        public string SubjectName { get; set; } = string.Empty;
+        public string Instructor { get; set; } = string.Empty;
+        public DayOfWeek DayOfWeek { get; set; }
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public string Room { get; set; } = string.Empty;
+        public int Duration { get; set; } // in minutes
+    }
+}

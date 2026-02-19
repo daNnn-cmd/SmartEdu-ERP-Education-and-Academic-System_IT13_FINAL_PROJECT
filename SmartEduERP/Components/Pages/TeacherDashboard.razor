@@ -1,0 +1,961 @@
+﻿@page "/teacher-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Teacher")]
+@inject SubjectService SubjectService
+@inject GradeService GradeService
+@inject StudentService StudentService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+@inject TeacherService TeacherService
+
+<PageTitle>Teacher Dashboard - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .user-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.125rem 0.5rem;
+        background: #10b981;
+        color: white;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-right: 0.5rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+
+    .stat-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .stat-card-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #737373;
+        margin: 0;
+    }
+
+    .stat-card-icon {
+        width: 16px;
+        height: 16px;
+        color: #a3a3a3;
+    }
+
+    .stat-card-value {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .stat-card-change {
+        font-size: 0.75rem;
+        color: #16a34a;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+        .stat-card-change.neutral {
+            color: #737373;
+        }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1rem;
+    }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .content-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .subject-list,
+    .grade-list {
+        width: 100%;
+    }
+
+    .subject-item,
+    .grade-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+        .subject-item:last-child,
+        .grade-item:last-child {
+            border-bottom: none;
+        }
+
+    .subject-info,
+    .grade-info {
+        flex: 1;
+    }
+
+    .subject-name,
+    .grade-student {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .subject-details,
+    .grade-details {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .subject-code {
+        font-weight: 600;
+        color: #3b82f6;
+    }
+
+    .grade-level-badge {
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-size: 0.625rem;
+        font-weight: 500;
+        background: #dbeafe;
+        color: #1e40af;
+        white-space: nowrap;
+        margin-right: 0.25rem;
+    }
+
+    .section-badge {
+        padding: 0.125rem 0.375rem;
+        border-radius: 4px;
+        font-size: 0.625rem;
+        font-weight: 500;
+        background: #dcfce7;
+        color: #166534;
+        white-space: nowrap;
+    }
+
+    .subject-action,
+    .grade-value {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.25rem 0.625rem;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    .subject-action {
+        background: #3b82f6;
+        color: white;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+        .subject-action:hover {
+            background: #2563eb;
+        }
+
+    .grade-value.excellent {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .grade-value.good {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .grade-value.poor {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .action-button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem 1rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #000;
+        transition: all 0.2s;
+    }
+
+        .action-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+            transform: translateY(-2px);
+        }
+
+    .action-icon {
+        width: 48px;
+        height: 48px;
+        background: #10b981;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .action-text {
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-align: center;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .view-all-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.875rem;
+        color: #3b82f6;
+        text-decoration: none;
+        margin-top: 1rem;
+    }
+
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+    .error-message {
+        padding: 0.75rem 1rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Teacher Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/teacher-dashboard" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/grades" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>Grade Management</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-menu-item">
+                    <a href="/teacher/schedule" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Assigned Subjects</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Teacher</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Teacher Dashboard</h1>
+            <p>Welcome back, <strong>@userName</strong>! Manage your classes and students.</p>
+        </div>
+
+        <!-- Error Message Display -->
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">
+                <strong>Error:</strong> @errorMessage
+            </div>
+        }
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">My Subjects</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@mySubjects.Count</div>
+                    <div class="stat-card-change">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        <span>@GetSubjectChangeText()</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">My Students</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@totalStudents</div>
+                    <div class="stat-card-change">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        <span>@GetStudentChangeText()</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">Grades Entered</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@myGrades.Count</div>
+                    <div class="stat-card-change">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                        <span>@GetGradeChangeText()</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- My Subjects -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">My Subjects</h3>
+                    </div>
+                    <div class="content-card-body">
+                        @if (mySubjects.Any())
+                        {
+                            <div class="subject-list">
+                                @foreach (var subject in mySubjects.Take(5))
+                                {
+                                    <div class="subject-item">
+                                        <div class="subject-info">
+                                            <p class="subject-name">
+                                                <span class="subject-code">@subject.SubjectCode</span> - @subject.SubjectName
+                                            </p>
+                                            <p class="subject-details">
+                                                <span class="grade-level-badge">@subject.GradeLevel</span>
+                                                <span class="section-badge">Section @subject.Section</span>
+                                            </p>
+                                        </div>
+                                        
+                                    </div>
+                                }
+                            </div>
+                            @if (mySubjects.Count > 5)
+                            {
+                                <a href="/subjects" class="view-all-link">
+                                    View all subjects
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="empty-icon">📚</div>
+                                <p>No subjects assigned yet.</p>
+                                <small>Contact your administrator to get subjects assigned.</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Recent Grades -->
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">Recent Grades</h3>
+                    </div>
+                    <div class="content-card-body">
+                        @if (myGrades.Any())
+                        {
+                            <div class="grade-list">
+                                @foreach (var grade in myGrades.Take(5))
+                                {
+                                    <div class="grade-item">
+                                        <div class="grade-info">
+                                            <p class="grade-student">
+                                                @(grade.Student != null ? $"{grade.Student.FirstName} {grade.Student.LastName}" : "Unknown Student")
+                                            </p>
+                                            <p class="grade-details">
+                                                @(grade.Subject?.SubjectName ?? "Unknown Subject")
+                                                @if (grade.Subject != null)
+                                                {
+                                                    <text> - @grade.Subject.GradeLevel Section @grade.Subject.Section</text>
+                                                }
+                                            </p>
+                                        </div>
+                                        <span class="grade-value @GetGradeClass(grade.GradeValue)">@grade.GradeValue?.ToString()</span>
+                                    </div>
+                                }
+                            </div>
+                            @if (myGrades.Count > 5)
+                            {
+                                <a href="/grades" class="view-all-link">
+                                    View all @myGrades.Count grades
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                    </svg>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <p>No grades entered yet.</p>
+                                <small>Your grades will appear here once you start entering them.</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Logout Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+@code {
+    private bool loading = true;
+    private string userName = "Teacher";
+    private int teacherId;
+    private List<Subject> mySubjects = new();
+    private List<Grade> myGrades = new();
+    private int totalStudents = 0;
+    private string? errorMessage;
+
+    // Logout confirmation
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get user info from authentication state
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userName = user.FindFirst(ClaimTypes.GivenName)?.Value + " " + user.FindFirst(ClaimTypes.Surname)?.Value;
+                if (string.IsNullOrWhiteSpace(userName))
+                    userName = user.Identity.Name ?? "Teacher";
+
+                var userId = AuthStateProvider.GetCurrentUserId();
+                if (userId.HasValue)
+                {
+                    await LoadTeacherIdFromUserAccount(userId.Value);
+                    if (teacherId > 0)
+                    {
+                        await LoadTeacherData();
+                    }
+                    else
+                    {
+                        errorMessage = "Teacher record not found. Please contact administrator.";
+                    }
+                }
+                else
+                {
+                    errorMessage = "Authentication error. Please log in again.";
+                }
+            }
+            else
+            {
+                errorMessage = "Please log in to access your dashboard.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading dashboard: {ex.Message}";
+            Console.WriteLine($"❌ Error in OnInitializedAsync: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadTeacherIdFromUserAccount(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && userAccount.ReferenceId.HasValue)
+            {
+                teacherId = userAccount.ReferenceId.Value;
+            }
+            else
+            {
+                // Fallback: try to find teacher by email
+                await FindTeacherByEmail(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error loading teacher ID: {ex.Message}");
+        }
+    }
+
+    private async Task FindTeacherByEmail(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && !string.IsNullOrEmpty(userAccount.Email))
+            {
+                var teachers = await TeacherService.GetAllTeachersAsync();
+                var matchingTeacher = teachers.FirstOrDefault(t =>
+                    t.Email?.ToLower() == userAccount.Email.ToLower());
+
+                if (matchingTeacher != null)
+                {
+                    teacherId = matchingTeacher.TeacherId;
+                    // Update user account with ReferenceId
+                    userAccount.ReferenceId = teacherId;
+                    await AuthService.UpdateUserAsync(userAccount);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error finding teacher by email: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTeacherData()
+    {
+        try
+        {
+            // Load teacher's subjects
+            mySubjects = await SubjectService.GetSubjectsByTeacherIdAsync(teacherId);
+
+            // Load teacher's grades
+            myGrades = await GradeService.GetGradesByTeacherIdAsync(teacherId);
+
+            // Count unique students from grades
+            totalStudents = myGrades
+                .Select(g => g.StudentId)
+                .Distinct()
+                .Count();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading teacher data. Please try again.";
+            Console.WriteLine($"❌ Error loading teacher data: {ex.Message}");
+        }
+    }
+
+    private string GetGradeClass(decimal? gradeValue)
+    {
+        if (!gradeValue.HasValue)
+            return "";
+
+        return gradeValue.Value >= 90 ? "excellent" :
+               gradeValue.Value >= 75 ? "good" :
+               "poor";
+    }
+
+    private string GetSubjectChangeText()
+    {
+        return mySubjects.Count > 0 ? "This semester" : "No subjects assigned";
+    }
+
+    private string GetStudentChangeText()
+    {
+        return totalStudents > 0 ? "Across all subjects" : "No students yet";
+    }
+
+    private string GetGradeChangeText()
+    {
+        return myGrades.Count > 0 ? "This semester" : "No grades entered";
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+}

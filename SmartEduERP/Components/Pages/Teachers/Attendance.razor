@@ -1,0 +1,1168 @@
+@page "/attendance"
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@using AttendanceModel = SmartEduERP.Data.Models.Attendance
+@attribute [Authorize(Roles = "Teacher")]
+@inject AttendanceService AttendanceService
+@inject EnrollmentService EnrollmentService
+@inject SubjectService SubjectService
+@inject TeacherService TeacherService
+@inject AuthStateProvider AuthStateProvider
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Attendance - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        align-items: center;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 220px;
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #737373;
+    }
+
+    .filter-select,
+    .filter-input {
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        font-size: 0.875rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 1.1rem;
+    }
+
+    .stat-card-title {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #737373;
+        margin: 0 0 0.35rem 0;
+    }
+
+    .stat-card-value {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.3fr);
+        gap: 1rem;
+    }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .content-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .attendance-table th {
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #737373;
+            border-bottom: 1px solid #e5e5e5;
+            background: #fafafa;
+        }
+
+        .attendance-table td {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .attendance-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .attendance-table tr:hover {
+            background: #fafafa;
+        }
+
+    .student-name {
+        font-weight: 500;
+        color: #000;
+    }
+
+    .status-select {
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        font-size: 0.8rem;
+    }
+
+    .remarks-input {
+        width: 100%;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
+        border: 1px solid #e5e5e5;
+        font-size: 0.8rem;
+    }
+
+    .primary-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: #16a34a;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.05s;
+    }
+
+        .primary-button:hover:not(:disabled) {
+            background: #15803d;
+        }
+
+        .primary-button:disabled {
+            opacity: 0.7;
+            cursor: default;
+        }
+
+    .helper-text {
+        font-size: 0.75rem;
+        color: #737373;
+        margin-top: 0.35rem;
+    }
+
+    .tag {
+        display: inline-block;
+        font-size: 0.7rem;
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        margin-right: 0.25rem;
+    }
+
+    .status-chip {
+        display: inline-block;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-weight: 500;
+    }
+
+    .status-present {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-absent {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-late {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-excused {
+        background: #e0f2fe;
+        color: #075985;
+    }
+
+    .error-message {
+        padding: 0.75rem 1rem;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .success-message {
+        padding: 0.75rem 1rem;
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        border-radius: 6px;
+        color: #166534;
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .content-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-wrapper {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-content {
+            margin-left: 0;
+            padding: 1rem;
+        }
+
+        .attendance-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Teacher Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/teacher-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/grades" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>Grade Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/attendance" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Attendance</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teacher/schedule" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Teaching Schedule</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Teacher</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Attendance</h1>
+            <p>Take attendance for your classes and review recent attendance records.</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message">
+                <strong>Error:</strong> @errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="success-message">
+                @successMessage
+            </div>
+        }
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            @if (!mySubjects.Any())
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">📚</div>
+                    <p>No subjects assigned yet.</p>
+                    <small>Contact your administrator to get teaching assignments before taking attendance.</small>
+                </div>
+            }
+            else
+            {
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Subject</label>
+                        <select class="filter-select" value="@selectedSubjectId" @onchange="OnSubjectChanged">
+                            @foreach (var subject in mySubjects)
+                            {
+                                <option value="@subject.SubjectId">
+                                    @subject.SubjectCode - @subject.SubjectName (@subject.GradeLevel, Section @subject.Section)
+                                </option>
+                            }
+                        </select>
+                        <div class="helper-text">Select which class you are taking attendance for.</div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">Date</label>
+                        <input type="date" class="filter-input" value="@selectedDate.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" />
+                        <div class="helper-text">Attendance will be saved for this date.</div>
+                    </div>
+
+                    <div class="filter-group" style="align-self: flex-end;">
+                        <button class="primary-button" @onclick="SaveAttendance" disabled="@isSaving || !subjectEnrollments.Any()">
+                            @if (isSaving)
+                            {
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>Save Attendance</span>
+                            }
+                        </button>
+                        <div class="helper-text">Statuses default to <strong>Present</strong> unless changed.</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <p class="stat-card-title">Total Students</p>
+                        <p class="stat-card-value">@subjectEnrollments.Count</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-card-title">Present / Late</p>
+                        <p class="stat-card-value">@presentCount</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-card-title">Absent</p>
+                        <p class="stat-card-value">@absentCount</p>
+                    </div>
+                    <div class="stat-card">
+                        <p class="stat-card-title">Excused</p>
+                        <p class="stat-card-value">@excusedCount</p>
+                    </div>
+                </div>
+
+                <div class="content-grid">
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">Take Attendance</h3>
+                        </div>
+                        <div class="content-card-body">
+                            @if (subjectEnrollments.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="attendance-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Student</th>
+                                                <th>Status</th>
+                                                <th>Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var enrollment in subjectEnrollments)
+                                            {
+                                                var student = enrollment.Student;
+                                                <tr>
+                                                    <td>
+                                                        <div class="student-name">
+                                                            @(student != null ? $"{student.FirstName} {student.LastName}" : "Unknown Student")
+                                                        </div>
+                                                        @if (student != null && !string.IsNullOrWhiteSpace(student.Email))
+                                                        {
+                                                            <div class="helper-text">@student.Email</div>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <select class="status-select" value="@GetStatus(enrollment.StudentId)" @onchange="(ChangeEventArgs e) => OnStatusChanged(e, enrollment.StudentId)">
+                                                            <option value="Present">Present</option>
+                                                            <option value="Absent">Absent</option>
+                                                            <option value="Late">Late</option>
+                                                            <option value="Excused">Excused</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <input class="remarks-input"
+                                                               placeholder="Optional remarks"
+                                                               value="@GetRemark(enrollment.StudentId)"
+                                                               @onchange="(ChangeEventArgs e) => OnRemarkChanged(e, enrollment.StudentId)" />
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <div class="empty-icon">👥</div>
+                                    <p>No students enrolled in this subject.</p>
+                                    <small>Ensure students are enrolled before taking attendance.</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">Recent Attendance</h3>
+                        </div>
+                        <div class="content-card-body">
+                            @if (recentAttendance.Any())
+                            {
+                                <div class="helper-text" style="margin-bottom: 0.5rem;">
+                                    Showing latest records for the selected subject.
+                                </div>
+                                <ul style="list-style: none; padding: 0; margin: 0;">
+                                    @foreach (var a in recentAttendance)
+                                    {
+                                        <li style="padding: 0.5rem 0; border-bottom: 1px solid #f5f5f5;">
+                                            <div style="font-size: 0.85rem; font-weight: 500;">
+                                                @(a.Student != null ? $"{a.Student.FirstName} {a.Student.LastName}" : "Unknown Student")
+                                            </div>
+                                            <div style="font-size: 0.78rem; color: #737373;">
+                                                <span class="tag">@a.Date.ToString("MMM dd, yyyy")</span>
+                                                <span class="status-chip @GetStatusChipClass(a.Status)">@a.Status</span>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(a.Remarks))
+                                            {
+                                                <div style="font-size: 0.78rem; color: #4b5563; margin-top: 0.15rem;">
+                                                    "@a.Remarks"
+                                                </div>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <div class="empty-icon">📊</div>
+                                    <p>No attendance records yet for this subject.</p>
+                                    <small>Once you save attendance, recent records will appear here.</small>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+@code {
+    private bool loading = true;
+    private string userName = "Teacher";
+    private int teacherId;
+
+    private List<Subject> mySubjects = new();
+    private int selectedSubjectId;
+    private DateTime selectedDate = DateTime.Today;
+
+    private List<Enrollment> subjectEnrollments = new();
+    private List<AttendanceModel> recentAttendance = new();
+
+    private readonly Dictionary<int, string> attendanceStatuses = new();
+    private readonly Dictionary<int, string> attendanceRemarks = new();
+
+    private int presentCount;
+    private int absentCount;
+    private int excusedCount;
+
+    private string? errorMessage;
+    private string? successMessage;
+
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                userName = user.FindFirst(ClaimTypes.GivenName)?.Value + " " + user.FindFirst(ClaimTypes.Surname)?.Value;
+                if (string.IsNullOrWhiteSpace(userName))
+                    userName = user.Identity?.Name ?? "Teacher";
+
+                var userId = AuthStateProvider.GetCurrentUserId();
+                if (userId.HasValue)
+                {
+                    await LoadTeacherIdFromUserAccount(userId.Value);
+                    if (teacherId > 0)
+                    {
+                        await LoadSubjectsAndAttendance();
+                    }
+                    else
+                    {
+                        errorMessage = "Teacher record not found. Please contact administrator.";
+                    }
+                }
+                else
+                {
+                    errorMessage = "Authentication error. Please log in again.";
+                }
+            }
+            else
+            {
+                errorMessage = "Please log in to access attendance.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading attendance page: {ex.Message}";
+            Console.WriteLine($"❌ Error in Attendance.OnInitializedAsync: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadTeacherIdFromUserAccount(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && userAccount.ReferenceId.HasValue)
+            {
+                teacherId = userAccount.ReferenceId.Value;
+            }
+            else
+            {
+                await FindTeacherByEmail(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error loading teacher ID for attendance: {ex.Message}");
+        }
+    }
+
+    private async Task FindTeacherByEmail(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && !string.IsNullOrEmpty(userAccount.Email))
+            {
+                var teachers = await TeacherService.GetAllTeachersAsync();
+                var matchingTeacher = teachers.FirstOrDefault(t =>
+                    t.Email != null &&
+                    t.Email.ToLower() == userAccount.Email.ToLower());
+
+                if (matchingTeacher != null)
+                {
+                    teacherId = matchingTeacher.TeacherId;
+                    userAccount.ReferenceId = teacherId;
+                    await AuthService.UpdateUserAsync(userAccount);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error finding teacher by email for attendance: {ex.Message}");
+        }
+    }
+
+    private async Task LoadSubjectsAndAttendance()
+    {
+        try
+        {
+            mySubjects = await SubjectService.GetSubjectsByTeacherIdAsync(teacherId);
+
+            if (mySubjects.Any())
+            {
+                if (selectedSubjectId == 0)
+                {
+                    selectedSubjectId = mySubjects.First().SubjectId;
+                }
+
+                await LoadSubjectData();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading subjects. Please try again.";
+            Console.WriteLine($"❌ Error loading subjects for attendance: {ex.Message}");
+        }
+    }
+
+    private async Task LoadSubjectData()
+    {
+        try
+        {
+            successMessage = null;
+            errorMessage = null;
+
+            subjectEnrollments = await EnrollmentService.GetEnrollmentsBySubjectAsync(selectedSubjectId);
+            subjectEnrollments = subjectEnrollments
+                .Where(e => !e.IsDeleted && e.Student != null && !e.Student.IsDeleted)
+                .OrderBy(e => e.Student!.LastName)
+                .ThenBy(e => e.Student!.FirstName)
+                .ToList();
+
+            attendanceStatuses.Clear();
+            attendanceRemarks.Clear();
+
+            foreach (var e in subjectEnrollments)
+            {
+                if (!attendanceStatuses.ContainsKey(e.StudentId))
+                {
+                    attendanceStatuses[e.StudentId] = "Present";
+                }
+            }
+
+            var allAttendanceForSubject = await AttendanceService.GetAttendanceBySubjectIdAsync(selectedSubjectId);
+
+            var todayRecords = allAttendanceForSubject
+                .Where(a => a.Date.Date == selectedDate.Date)
+                .ToList();
+
+            foreach (var record in todayRecords)
+            {
+                attendanceStatuses[record.StudentId] = record.Status;
+                if (!string.IsNullOrWhiteSpace(record.Remarks))
+                {
+                    attendanceRemarks[record.StudentId] = record.Remarks;
+                }
+            }
+
+            recentAttendance = allAttendanceForSubject
+                .OrderByDescending(a => a.Date)
+                .Take(10)
+                .ToList();
+
+            RecalculateSummary();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error loading attendance data. Please try again.";
+            Console.WriteLine($"❌ Error loading subject attendance data: {ex.Message}");
+        }
+    }
+
+    private void RecalculateSummary()
+    {
+        presentCount = 0;
+        absentCount = 0;
+        excusedCount = 0;
+
+        foreach (var e in subjectEnrollments)
+        {
+            var status = GetStatus(e.StudentId);
+            switch (status)
+            {
+                case "Absent":
+                    absentCount++;
+                    break;
+                case "Excused":
+                    excusedCount++;
+                    break;
+                case "Present":
+                case "Late":
+                default:
+                    presentCount++;
+                    break;
+            }
+        }
+    }
+
+    private string GetStatus(int studentId)
+    {
+        if (attendanceStatuses.TryGetValue(studentId, out var status) && !string.IsNullOrWhiteSpace(status))
+            return status;
+        return "Present";
+    }
+
+    private string GetRemark(int studentId)
+    {
+        return attendanceRemarks.TryGetValue(studentId, out var remark) ? remark : string.Empty;
+    }
+
+    private void OnStatusChanged(int studentId, string status)
+    {
+        attendanceStatuses[studentId] = status;
+        RecalculateSummary();
+    }
+
+    private void OnRemarkChanged(int studentId, string remark)
+    {
+        attendanceRemarks[studentId] = remark;
+    }
+
+    private void OnStatusChanged(ChangeEventArgs e, int studentId)
+    {
+        var status = e.Value?.ToString() ?? "Present";
+        OnStatusChanged(studentId, status);
+    }
+
+    private void OnRemarkChanged(ChangeEventArgs e, int studentId)
+    {
+        var remark = e.Value?.ToString() ?? string.Empty;
+        OnRemarkChanged(studentId, remark);
+    }
+
+    private async Task SaveAttendance()
+    {
+        if (!subjectEnrollments.Any())
+        {
+            errorMessage = "There are no students enrolled in this subject.";
+            return;
+        }
+
+        isSaving = true;
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            var existingForSubject = await AttendanceService.GetAttendanceBySubjectIdAsync(selectedSubjectId);
+            var existingForDate = existingForSubject
+                .Where(a => a.Date.Date == selectedDate.Date)
+                .ToDictionary(a => a.StudentId, a => a);
+
+            foreach (var e in subjectEnrollments)
+            {
+                var status = GetStatus(e.StudentId);
+                var remark = GetRemark(e.StudentId);
+
+                if (existingForDate.TryGetValue(e.StudentId, out var existing))
+                {
+                    existing.Status = status;
+                    existing.Remarks = string.IsNullOrWhiteSpace(remark) ? null : remark;
+                    await AttendanceService.UpdateAttendanceAsync(existing);
+                }
+                else
+                {
+                    var attendance = new AttendanceModel
+                    {
+                        StudentId = e.StudentId,
+                        SubjectId = e.SubjectId,
+                        Date = selectedDate.Date,
+                        Status = status,
+                        Remarks = string.IsNullOrWhiteSpace(remark) ? null : remark
+                    };
+
+                    await AttendanceService.CreateAttendanceAsync(attendance);
+                }
+            }
+
+            successMessage = "Attendance has been saved successfully.";
+
+            await LoadSubjectData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving attendance: {ex.Message}";
+            Console.WriteLine($"❌ Error saving attendance: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task OnSubjectChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var subjectId))
+        {
+            selectedSubjectId = subjectId;
+            await LoadSubjectData();
+        }
+    }
+
+    private async Task OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            selectedDate = date;
+            await LoadSubjectData();
+        }
+    }
+
+    private string GetStatusChipClass(string status)
+    {
+        return status switch
+        {
+            "Absent" => "status-chip status-absent",
+            "Late" => "status-chip status-late",
+            "Excused" => "status-chip status-excused",
+            _ => "status-chip status-present"
+        };
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+}

@@ -1,0 +1,788 @@
+﻿@page "/students/profile"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@using Microsoft.AspNetCore.Components.Web
+
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject StudentService StudentService
+@inject AuthStateProvider AuthStateProvider
+@inject AuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>My Profile - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .profile-container {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 1.5rem;
+    }
+
+    .profile-sidebar {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 2rem;
+        color: #737373;
+    }
+
+    .profile-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .profile-role {
+        font-size: 0.875rem;
+        color: #737373;
+        margin: 0 0 1rem 0;
+    }
+
+    .profile-stats {
+        display: flex;
+        justify-content: space-around;
+        margin: 1.5rem 0;
+        padding: 1rem 0;
+        border-top: 1px solid #f5f5f5;
+        border-bottom: 1px solid #f5f5f5;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .profile-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .content-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .edit-button {
+        background: none;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .edit-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .info-item {
+        margin-bottom: 1rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #737373;
+        margin: 0 0 0.25rem 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: #000;
+        margin: 0;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #737373;
+    }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: #e5e5e5;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #404040;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            margin: 0 0 1.5rem 0;
+        }
+
+    .text-muted {
+        color: #737373;
+        font-style: italic;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-wrapper {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .profile-container {
+            grid-template-columns: 1fr;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Student Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/student-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/enrollments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>My Enrollments</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/viewgrades" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>My Grades</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item">
+                    <a href="/students/payment" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item">
+                    <a href="/students/schedule" class="sidebar-menu-button">
+
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Class Schedule</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students/profile" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>My Profile</span>
+                    </a></li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Student</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>My Profile</h1>
+            <p>View your personal information and academic details.</p>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else if (student == null)
+        {
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <h3>Profile Not Found</h3>
+                <p>Unable to load your profile information. Please try again later.</p>
+            </div>
+        }
+        else
+        {
+            <div class="profile-container">
+                <!-- Profile Sidebar -->
+                <div class="profile-sidebar">
+                    <div class="profile-avatar">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    <h2 class="profile-name">@student.FirstName @student.LastName</h2>
+                    <p class="profile-role">Student</p>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <p class="stat-value">@enrollmentCount</p>
+                            <p class="stat-label">Enrollments</p>
+                        </div>
+                        <div class="stat-item">
+                            <p class="stat-value">@gradeCount</p>
+                            <p class="stat-label">Grades</p>
+                        </div>
+                        <div class="stat-item">
+                            <p class="stat-value">@completedPayments</p>
+                            <p class="stat-label">Payments</p>
+                        </div>
+                    </div>
+
+                    
+                </div>
+
+                <!-- Profile Content -->
+                <div class="profile-content">
+                    <!-- Personal Information -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">Personal Information</h3>
+                        </div>
+                        <div class="content-card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <p class="info-label">Student ID</p>
+                                    <p class="info-value">@student.StudentId</p>
+                                </div>
+                                <div class="info-item">
+                                    <p class="info-label">Email</p>
+                                    <p class="info-value">@student.Email</p>
+                                </div>
+
+                                <div class="info-item">
+                                    <p class="info-label">Date of Birth</p>
+                                    <p class="info-value">
+                                        @if (student.DateOfBirth.HasValue)
+                                        {
+                                            @student.DateOfBirth.Value.ToString("MMM dd, yyyy")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not provided</span>
+                                        }
+                                    </p>
+                                </div>
+                                <div class="info-item">
+                                    <p class="info-label">Gender</p>
+                                    <p class="info-value">
+                                        @if (!string.IsNullOrEmpty(student.Gender))
+                                        {
+                                            @student.Gender
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not provided</span>
+                                        }
+                                    </p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Academic Information -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">Academic Information</h3>
+                        </div>
+                        <div class="content-card-body">
+                            <div class="info-grid">
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="content-card">
+                        <div class="content-card-header">
+                            <h3 class="content-card-title">Contact Information</h3>
+                        </div>
+                        <div class="content-card-body">
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <p class="info-label">Address</p>
+                                    <p class="info-value">
+                                        @if (!string.IsNullOrEmpty(student.Address))
+                                        {
+                                            @student.Address
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not provided</span>
+                                        }
+                                    </p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Logout Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+@code {
+    private Student? student;
+    private bool loading = true;
+    private string userName = "";
+    private int enrollmentCount = 0;
+    private int gradeCount = 0;
+    private int completedPayments = 0;
+
+    // Logout confirmation
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Student";
+        var userId = AuthStateProvider.GetCurrentUserId();
+        int studentId = 0;
+        if (userId.HasValue)
+        {
+            var user = await AuthService.GetUserByIdAsync(userId.Value);
+            if (user?.ReferenceId != null)
+            {
+                studentId = user.ReferenceId.Value;
+            }
+            else if (!string.IsNullOrEmpty(user?.Email))
+            {
+                var students = await StudentService.GetAllStudentsAsync();
+                var match = students.FirstOrDefault(s => s.Email != null && s.Email.ToLower() == user.Email.ToLower());
+                if (match != null)
+                {
+                    studentId = match.StudentId;
+                    user.ReferenceId = studentId;
+                    await AuthService.UpdateUserAsync(user);
+                }
+            }
+        }
+        if (studentId > 0)
+        {
+            await LoadStudentProfile(studentId);
+        }
+        loading = false;
+    }
+
+    private async Task LoadStudentProfile(int studentId)
+    {
+        student = await StudentService.GetStudentByIdAsync(studentId);
+
+        // In a real application, you would fetch these counts from respective services
+        // For now, we'll set some placeholder values
+        enrollmentCount = 5; // This would come from EnrollmentService
+        gradeCount = 12; // This would come from GradeService
+        completedPayments = 3; // This would come from PaymentService
+    }
+
+    private string GetStatusClass(string? status)
+    {
+        return status?.ToLower() switch
+        {
+            "active" => "payment-status paid",
+            "inactive" => "payment-status failed",
+            "suspended" => "payment-status pending",
+            _ => "text-muted"
+        };
+    }
+
+    private void EditProfile()
+    {
+        // Navigate to edit profile page
+        Navigation.NavigateTo("/students/profile/edit");
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            // Fallback to simple logout
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+}

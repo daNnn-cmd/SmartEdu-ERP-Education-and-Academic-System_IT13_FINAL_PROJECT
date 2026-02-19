@@ -1,0 +1,1684 @@
+@page "/admin-dashboard"
+@using SmartEduERP.Services
+@using SmartEduERP.Components.Shared
+@inject StudentService StudentService
+@inject TeacherService TeacherService
+@inject EnrollmentService EnrollmentService
+@inject PaymentService PaymentService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject SyncTimerService SyncService
+@inject IToastService ToastService
+@inject IGlobalSyncService GlobalSyncService
+@inject IBidirectionalSyncService BidirectionalSyncService
+
+<PageTitle>Admin Dashboard - SmartEduERP</PageTitle>
+
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+        position: relative; @* ✅ ADD THIS *@
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 1.25rem;
+    }
+
+    .stat-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .stat-card-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #737373;
+        margin: 0;
+    }
+
+    .stat-card-icon {
+        width: 16px;
+        height: 16px;
+        color: #a3a3a3;
+    }
+
+    .stat-card-value {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 0.5rem 0;
+        text-align: right;
+    }
+
+    .stat-card-change {
+        font-size: 0.75rem;
+        color: #16a34a;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        justify-content: flex-end;
+        text-align: right;
+    }
+
+        .stat-card-change.negative {
+            color: #dc2626;
+        }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .modal-icon {
+        width: 40px;
+        height: 40px;
+        background: #fef3c7;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+    }
+
+    .modal-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-body {
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-text {
+        font-size: 0.875rem;
+        color: #737373;
+        line-height: 1.5;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .modal-button {
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+    }
+
+    .modal-button-cancel {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+    }
+
+        .modal-button-cancel:hover {
+            background: #f5f5f5;
+        }
+
+    .modal-button-confirm {
+        background: #000;
+        color: white;
+    }
+
+        .modal-button-confirm:hover {
+            background: #262626;
+        }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .chart-container {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .chart-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .chart-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+    .chart-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .chart-card-body {
+        padding: 1.25rem;
+        height: 300px;
+        position: relative;
+    }
+
+    .chart-canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-full-width {
+        grid-column: 1 / -1;
+    }
+
+    .time-filter {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .time-filter-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: white;
+        color: #404040;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .time-filter-button.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .time-filter-button:hover:not(.active) {
+            background: #f5f5f5;
+        }
+
+    /* New filter styles */
+    /* Updated filter styles */
+    .filter-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        align-items: flex-end; /* Changed from center to flex-end */
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1; /* Added to make groups flexible */
+        min-width: 120px; /* Added minimum width */
+    }
+
+    .filter-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #737373;
+        margin-bottom: 0.25rem; /* Added spacing */
+    }
+
+    .filter-select {
+        padding: 0.5rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: white;
+        color: #404040;
+        font-size: 0.875rem;
+        min-width: 120px;
+        height: 36px; /* Added fixed height to match buttons */
+        box-sizing: border-box; /* Ensure padding is included in height */
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-end; /* Ensure buttons align with bottom of selects */
+        margin-bottom: 0.25rem; /* Adjust to align perfectly */
+        margin-top: 8px; /* Add this line - adjust value as needed */
+    }
+
+    .filter-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        background: white;
+        color: #404040;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        height: 36px; /* Match the height of select elements */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box; /* Ensure padding is included in height */
+    }
+
+        .filter-button:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-button.primary {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+            .filter-button.primary:hover {
+                background: #262626;
+            }
+
+    .stat-card[style*="cursor: pointer"]:hover {
+        border-color: #000;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+        transition: all 0.2s ease-in-out;
+        background: #fafafa;
+    }
+
+    /* ✅ UPDATED SYNC STYLES */
+    .sync-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+
+        .sync-status.syncing {
+            background: #f0f9ff;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .sync-status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .sync-status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+    .sync-spinner {
+        width: 12px;
+        height: 12px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .sync-badge {
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: -5px;
+    left: 0px;   /* 👈 moved to left */
+    right: auto;  /* 👈 disable right positioning */
+}
+
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Smart EDU</h2>
+                <p class="sidebar-subtitle">Academic System</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Main Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/admin-dashboard" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/students" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Student Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teachers" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                        <span>Teacher Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/subjects" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Academic Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/admin/enrollment-approvals" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Enrollment Approvals</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/payments" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                        <span>Student Tuition Payments</span>
+                    </a>
+                </li>
+               
+                
+                
+                <li class="sidebar-menu-item">
+                    <a href="/admin/users" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 11l-3-3m0 0l-3 3m3-3v7"></path>
+                        </svg>
+                        <span>Manage Users</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <NavLink href="/audit-logs" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Audit Logs</span>
+                    </NavLink>
+                </li>
+               
+                
+
+                <!-- ✅ UPDATED: Enhanced Global Sync Menu Item -->
+                <li class="sidebar-menu-item">
+                    <button class="sidebar-menu-button" @onclick="GlobalSync" disabled="@isSyncing">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                            <line x1="16" y1="5" x2="22" y2="5"></line>
+                            <line x1="19" y1="2" x2="19" y2="8"></line>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"></path>
+                        </svg>
+                        <span>Sync All to Cloud</span>
+                        @if (isSyncing)
+                        {
+                            <div class="sync-spinner"></div>
+                        }
+                        @if (pendingSyncCount > 0 && !isSyncing)
+                        {
+                            <span class="sync-badge">@pendingSyncCount</span>
+                        }
+                    </button>
+                    @if (!string.IsNullOrEmpty(syncMessage))
+                    {
+                        <div class="sync-status @syncStatusClass">
+                            @syncMessage
+                        </div>
+                    }
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">admin</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Analytics Dashboard</h1>
+            <p>Comprehensive overview of your institution's performance</p>
+        </div>
+
+        @if (loading)
+        {
+            <div class="loading-container">
+                <div class="spinner"></div>
+            </div>
+        }
+        else
+        {
+            <!-- Year/Month Filter -->
+            <div class="filter-container">
+                <div class="filter-group">
+                    <label class="filter-label">Year</label>
+                    <select class="filter-select" @bind="selectedYear">
+                        <option value="0">All Years</option>
+                        @foreach (var year in availableYears)
+                        {
+                            <option value="@year">@year</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Month</label>
+                    <select class="filter-select" @bind="selectedMonth">
+                        <option value="0">All Months</option>
+                        @foreach (var month in availableMonths)
+                        {
+                            <option value="@month.Value">@month.Key</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">View Type</label>
+                    <select class="filter-select" @bind="selectedTimeRange">
+                        <option value="month">Monthly</option>
+                        <option value="quarter">Quarterly</option>
+                        <option value="year">Yearly</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="filter-button primary" @onclick="ApplyFilters">
+                        Apply Filters
+                    </button>
+                    <button class="filter-button" @onclick="ResetFilters">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <!-- Clickable Total Students Card -->
+                <div class="stat-card" style="cursor: pointer;" @onclick="NavigateToStudents">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">Total Students</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@studentCount.ToString("N0")</div>
+                    <div class="stat-card-change @(studentGrowth >= 0 ? "" : "negative")">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            @if (studentGrowth >= 0)
+                            {
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            }
+                            else
+                            {
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                <polyline points="17 18 23 18 23 12"></polyline>
+                            }
+                        </svg>
+                        <span>@Math.Abs(studentGrowth).ToString("0.0")% from last period</span>
+                    </div>
+                </div>
+
+                <!-- Clickable Total Teachers Card -->
+                <div class="stat-card" style="cursor: pointer;" @onclick="NavigateToTeachers">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">Total Active Teachers</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@teacherCount.ToString("N0")</div>
+                    <div class="stat-card-change @(teacherGrowth >= 0 ? "" : "negative")">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            @if (teacherGrowth >= 0)
+                            {
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            }
+                            else
+                            {
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                <polyline points="17 18 23 18 23 12"></polyline>
+                            }
+                        </svg>
+                        <span>@Math.Abs(teacherGrowth).ToString("0.0")% from last period</span>
+                    </div>
+                </div>
+
+                <!-- Active Enrollments Card -->
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">Active Enrollments</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">@enrollmentCount.ToString("N0")</div>
+                    <div class="stat-card-change @(enrollmentGrowth >= 0 ? "" : "negative")">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            @if (enrollmentGrowth >= 0)
+                            {
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            }
+                            else
+                            {
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                <polyline points="17 18 23 18 23 12"></polyline>
+                            }
+                        </svg>
+                        <span>@Math.Abs(enrollmentGrowth).ToString("0.0")% from last period</span>
+                    </div>
+                </div>
+
+                <!-- Clickable Revenue This Period Card -->
+                <div class="stat-card" style="cursor: pointer;" @onclick="NavigateToPayments">
+                    <div class="stat-card-header">
+                        <h3 class="stat-card-title">Revenue This Period</h3>
+                        <svg class="stat-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="stat-card-value">₱@totalRevenue.ToString("N0")</div>
+                    <div class="stat-card-change @(revenueGrowth >= 0 ? "" : "negative")">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            @if (revenueGrowth >= 0)
+                            {
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            }
+                            else
+                            {
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                <polyline points="17 18 23 18 23 12"></polyline>
+                            }
+                        </svg>
+                        <span>@Math.Abs(revenueGrowth).ToString("0.0")% from last period</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Charts Grid -->
+            <div class="analytics-grid">
+                <!-- Revenue Trend Chart -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">Revenue Trend - @GetChartTitle()</h3>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="revenueChart" class="simple-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Enrollment Distribution -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">Enrollment Distribution</h3>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="enrollmentChart" class="simple-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Student & Teacher Growth Chart -->
+                <div class="chart-card chart-full-width">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">Enrollment, Student & Teacher Growth - @GetChartTitle()</h3>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="growthChart" class="simple-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Payment Status Distribution -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">Payment Status</h3>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="paymentChart" class="simple-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Subject Enrollment -->
+                <div class="chart-card">
+                    <div class="chart-card-header">
+                        <h3 class="chart-card-title">Top Subjects</h3>
+                    </div>
+                    <div class="chart-card-body">
+                        <canvas id="subjectChart" class="simple-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation" Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your account."
+                    ConfirmText="Log Out" ProcessingText="Logging out..." Type="@ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut" OnConfirm="ConfirmLogout" OnCancel="HideLogoutConfirmation" />
+
+@code {
+    private bool loading = true;
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+    private int studentCount, teacherCount, enrollmentCount;
+    private decimal totalRevenue;
+    private string userName = "";
+    private string selectedTimeRange = "month";
+
+    // New filter properties
+    private int selectedYear = DateTime.Now.Year; // Default to current year
+    private int selectedMonth = 0; // 0 means all months
+    private List<int> availableYears = new();
+    private Dictionary<string, int> availableMonths = new();
+
+    // Growth metrics
+    private double studentGrowth = 0;
+    private double teacherGrowth = 0;
+    private double enrollmentGrowth = 0;
+    private double revenueGrowth = 0;
+
+    // ✅ UPDATED: Enhanced Sync properties
+    private bool isSyncing = false;
+    private string syncMessage = "";
+    private string syncStatusClass = "";
+    private int pendingSyncCount = 0;
+    private System.Threading.Timer? syncStatusTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        userName = AuthStateProvider.GetCurrentUsername() ?? "Admin";
+        InitializeFilters();
+        await LoadDashboardData();
+        
+        // ✅ ADD: Start periodic sync status updates
+        await LoadPendingSyncCount();
+        syncStatusTimer = new System.Threading.Timer(async _ =>
+        {
+            await LoadPendingSyncCount();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+    }
+
+    private void InitializeFilters()
+    {
+        // Generate years (last 5 years + current year + up to 2030)
+        var currentYear = DateTime.Now.Year;
+        var endYear = 2030;
+        availableYears = Enumerable.Range(currentYear - 5, endYear - (currentYear - 5) + 1).ToList();
+
+        // Generate months
+        availableMonths = new Dictionary<string, int>
+        {
+            {"January", 1}, {"February", 2}, {"March", 3}, {"April", 4},
+            {"May", 5}, {"June", 6}, {"July", 7}, {"August", 8},
+            {"September", 9}, {"October", 10}, {"November", 11}, {"December", 12}
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeCharts();
+        }
+    }
+
+    // ✅ UPDATED: Bidirectional Sync method
+    private async Task GlobalSync()
+    {
+        if (isSyncing) return;
+
+        isSyncing = true;
+        syncMessage = "🔄 Syncing bidirectionally (Local ↔ Cloud)...";
+        syncStatusClass = "syncing";
+        StateHasChanged();
+
+        try
+        {
+            // Use the new bidirectional sync service
+            var result = await BidirectionalSyncService.SyncAsync();
+
+            if (result.Success)
+            {
+                syncMessage = $"✅ Bidirectional sync successful! +{result.RecordsAdded} ~{result.RecordsUpdated} -{result.RecordsDeleted}";
+                syncStatusClass = "success";
+                ToastService.ShowSuccess($"Sync completed: {result.RecordsAdded} added, {result.RecordsUpdated} updated");
+                
+                // Refresh pending count
+                await LoadPendingSyncCount();
+            }
+            else
+            {
+                var errorMsg = result.Errors.Any() ? string.Join(", ", result.Errors) : "Unknown error";
+                syncMessage = $"❌ Sync failed: {errorMsg}";
+                syncStatusClass = "error";
+                ToastService.ShowWarning($"Sync failed: {errorMsg}");
+            }
+        }
+        catch (Exception ex)
+        {
+            syncMessage = $"❌ Sync error: {ex.Message}";
+            syncStatusClass = "error";
+            ToastService.ShowError($"Sync error: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+
+            // Clear message after 5 seconds
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                syncMessage = "";
+                syncStatusClass = "";
+                await InvokeAsync(StateHasChanged);
+            });
+        }
+    }
+
+    // ✅ ADD: Load pending sync count
+    private async Task LoadPendingSyncCount()
+    {
+        try
+        {
+            pendingSyncCount = await GlobalSyncService.GetPendingSyncCountAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sync count: {ex.Message}");
+        }
+    }
+
+    // ... (rest of your existing methods remain exactly the same) ...
+    private async Task LoadDashboardData()
+    {
+        loading = true;
+        try
+        {
+            // Convert filters - use null for "All" selections
+            int? yearFilter = selectedYear == 0 ? null : selectedYear;
+            int? monthFilter = selectedMonth == 0 ? null : selectedMonth;
+
+            Console.WriteLine($"Loading data with filters - Year: {yearFilter}, Month: {monthFilter}"); // Debug
+
+            studentCount = await StudentService.GetTotalStudentCountAsync(yearFilter, monthFilter);
+            // Use full active teacher count regardless of registration date filters
+            teacherCount = await TeacherService.GetActiveTeachersCountAsync();
+            enrollmentCount = await EnrollmentService.GetTotalEnrollmentCountAsync(yearFilter, monthFilter);
+            totalRevenue = await PaymentService.GetTotalPaymentAmountAsync(yearFilter, monthFilter);
+
+            // Load growth percentages
+            studentGrowth = (double)await StudentService.GetStudentGrowthPercentageAsync(yearFilter, monthFilter, selectedTimeRange);
+            teacherGrowth = (double)await TeacherService.GetTeacherGrowthPercentageAsync(yearFilter, monthFilter, selectedTimeRange);
+            enrollmentGrowth = (double)await EnrollmentService.GetEnrollmentGrowthPercentageAsync(yearFilter, monthFilter, selectedTimeRange);
+            revenueGrowth = (double)await PaymentService.GetRevenueGrowthPercentageAsync(yearFilter, monthFilter, selectedTimeRange);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard loading error: {ex.Message}");
+            studentCount = teacherCount = enrollmentCount = 0;
+            totalRevenue = 0;
+            studentGrowth = teacherGrowth = enrollmentGrowth = revenueGrowth = 0;
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InitializeCharts()
+    {
+        try
+        {
+            await InitializeRevenueChart();
+            await InitializeEnrollmentChart();
+            await InitializeGrowthChart();
+            await InitializePaymentChart();
+            await InitializeSubjectChart();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Chart initialization error: {ex.Message}");
+        }
+    }
+
+    private string[] GenerateColors(int count)
+    {
+        var colors = new[]
+        {
+            "rgba(59, 130, 246, 0.8)",   // Blue
+            "rgba(16, 185, 129, 0.8)",   // Green
+            "rgba(245, 158, 11, 0.8)",   // Yellow
+            "rgba(139, 92, 246, 0.8)",   // Purple
+            "rgba(236, 72, 153, 0.8)",   // Pink
+            "rgba(14, 165, 233, 0.8)",   // Light Blue
+            "rgba(34, 197, 94, 0.8)",    // Light Green
+            "rgba(249, 115, 22, 0.8)",   // Orange
+            "rgba(168, 85, 247, 0.8)",   // Light Purple
+            "rgba(239, 68, 68, 0.8)"     // Red
+        };
+
+        return colors.Take(count).ToArray();
+    }
+
+    private async Task InitializeRevenueChart()
+    {
+        try
+        {
+            // Pass null for "All Years" and "All Months"
+            int? yearFilter = selectedYear == 0 ? null : selectedYear;
+            int? monthFilter = selectedMonth == 0 ? null : selectedMonth;
+
+            var revenueData = await PaymentService.GetRevenueDataAsync(yearFilter, monthFilter, selectedTimeRange);
+            if (revenueData?.Any() == true)
+            {
+                // Sort labels chronologically (not alphabetically)
+                var ordered = revenueData
+                    .OrderBy(r => GetLabelSortKey(r.Label, selectedTimeRange))
+                    .ToList();
+
+                var labels = ordered.Select(r => r.Label).ToArray();
+                var data = ordered.Select(r => (double)r.Amount).ToArray();
+
+                var config = new
+                {
+                    type = "line",
+                    data = new
+                    {
+                        labels = labels,
+                        datasets = new[]
+                        {
+                            new
+                            {
+                                label = "Revenue",
+                                data = data,
+                                backgroundColor = "rgba(59, 130, 246, 0.2)",
+                                borderColor = "rgba(59, 130, 246, 1)",
+                                borderWidth = 2,
+                                pointBackgroundColor = "rgba(59, 130, 246, 1)",
+                                pointBorderColor = "#fff",
+                                pointRadius = 4,
+                                fill = true
+                            }
+                        }
+                    },
+                    options = new
+                    {
+                        responsive = true,
+                        maintainAspectRatio = false,
+                        plugins = new
+                        {
+                            legend = new { display = true, position = "top" }
+                        }
+                    }
+                };
+
+                await JSRuntime.InvokeVoidAsync("createChart", "revenueChart", config);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Revenue chart error: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeEnrollmentChart()
+    {
+        try
+        {
+            var enrollmentData = await EnrollmentService.GetEnrollmentDistributionAsync();
+
+            if (enrollmentData?.Any() == true)
+            {
+                var labels = enrollmentData.Keys.ToArray();
+                var data = enrollmentData.Values.ToArray();
+
+                // Generate distinct colors for each academic year
+                var backgroundColors = GenerateColors(labels.Length);
+
+                var config = new
+                {
+                    type = "doughnut",
+                    data = new
+                    {
+                        labels = labels,
+                        datasets = new[]
+                        {
+                            new
+                            {
+                                label = "Enrollments by Academic Year",
+                                data = data,
+                                backgroundColor = backgroundColors,
+                                borderColor = backgroundColors.Select(c => c.Replace("0.8", "1")).ToArray(),
+                                borderWidth = 1
+                            }
+                        }
+                    },
+                    options = new
+                    {
+                        responsive = true,
+                        maintainAspectRatio = false,
+                        plugins = new
+                        {
+                            legend = new
+                            {
+                                display = true,
+                                position = "right",
+                                labels = new
+                                {
+                                    boxWidth = 12,
+                                    padding = 15
+                                }
+                            },
+                            title = new
+                            {
+                                display = true,
+                                text = "Enrollments by Academic Year"
+                            }
+                        }
+                    }
+                };
+
+                await JSRuntime.InvokeVoidAsync("createChart", "enrollmentChart", config);
+            }
+            else
+            {
+                // Show empty state chart
+                await InitializeEmptyEnrollmentChart();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Enrollment chart error: {ex.Message}");
+            await InitializeEmptyEnrollmentChart();
+        }
+    }
+
+    private async Task InitializeEmptyEnrollmentChart()
+    {
+        var config = new
+        {
+            type = "doughnut",
+            data = new
+            {
+                labels = new[] { "No Data Available" },
+                datasets = new[]
+                {
+                    new
+                    {
+                        label = "Enrollments",
+                        data = new[] { 1 },
+                        backgroundColor = new[] { "rgba(200, 200, 200, 0.8)" },
+                        borderColor = new[] { "rgba(200, 200, 200, 1)" },
+                        borderWidth = 1
+                    }
+                }
+            },
+            options = new
+            {
+                responsive = true,
+                maintainAspectRatio = false,
+                plugins = new
+                {
+                    legend = new { display = true, position = "right" },
+                    title = new
+                    {
+                        display = true,
+                        text = "Enrollments by Academic Year"
+                    }
+                }
+            }
+        };
+
+        await JSRuntime.InvokeVoidAsync("createChart", "enrollmentChart", config);
+    }
+
+    private async Task InitializeGrowthChart()
+    {
+        try
+        {
+            // Pass null for "All Years" and "All Months"
+            int? yearFilter = selectedYear == 0 ? null : selectedYear;
+            int? monthFilter = selectedMonth == 0 ? null : selectedMonth;
+
+            var studentGrowthData = await StudentService.GetStudentGrowthAsync(yearFilter, monthFilter, selectedTimeRange);
+            var teacherGrowthData = await TeacherService.GetTeacherGrowthAsync(yearFilter, monthFilter, selectedTimeRange);
+            var enrollmentGrowthData = await EnrollmentService.GetEnrollmentGrowthDataAsync(yearFilter, monthFilter, selectedTimeRange);
+
+            // Sort labels chronologically based on selected time range
+            var studentOrdered = studentGrowthData
+                .OrderBy(g => GetLabelSortKey(g.Label, selectedTimeRange))
+                .ToList();
+
+            var labels = studentOrdered.Select(g => g.Label).ToArray();
+            var studentData = studentOrdered.Select(g => g.CumulativeCount).ToArray();
+
+            var teacherMap = teacherGrowthData.ToDictionary(g => g.Label, g => g.CumulativeCount);
+            var enrollmentMap = enrollmentGrowthData.ToDictionary(g => g.Label, g => g.CumulativeCount);
+            var teacherData = labels.Select(l => teacherMap.TryGetValue(l, out var v) ? v : 0).ToArray();
+            var enrollmentData = labels.Select(l => enrollmentMap.TryGetValue(l, out var v) ? v : 0).ToArray();
+
+            var config = new
+            {
+                type = "line",
+                data = new
+                {
+                    labels = labels,
+                    datasets = new[]
+                    {
+                        new
+                        {
+                            label = "Students",
+                            data = studentData,
+                            backgroundColor = "rgba(59, 130, 246, 0.2)",
+                            borderColor = "rgba(59, 130, 246, 1)",
+                            borderWidth = 2,
+                            pointBackgroundColor = "rgba(59, 130, 246, 1)",
+                            pointBorderColor = "#fff",
+                            pointRadius = 4,
+                            fill = true
+                        },
+                        new
+                        {
+                            label = "Teachers",
+                            data = teacherData,
+                            backgroundColor = "rgba(16, 185, 129, 0.2)",
+                            borderColor = "rgba(16, 185, 129, 1)",
+                            borderWidth = 2,
+                            pointBackgroundColor = "rgba(16, 185, 129, 1)",
+                            pointBorderColor = "#fff",
+                            pointRadius = 4,
+                            fill = true
+                        },
+                        new
+                        {
+                            label = "Enrollments",
+                            data = enrollmentData,
+                            backgroundColor = "rgba(139, 92, 246, 0.2)",
+                            borderColor = "rgba(139, 92, 246, 1)",
+                            borderWidth = 2,
+                            pointBackgroundColor = "rgba(139, 92, 246, 1)",
+                            pointBorderColor = "#fff",
+                            pointRadius = 4,
+                            fill = true
+                        }
+                    }
+                },
+                options = new
+                {
+                    responsive = true,
+                    maintainAspectRatio = false,
+                    plugins = new
+                    {
+                        legend = new { display = true, position = "top" }
+                    }
+                }
+            };
+
+            await JSRuntime.InvokeVoidAsync("createChart", "growthChart", config);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Growth chart error: {ex.Message}");
+        }
+    }
+
+    // Helper: compute a sortable numeric key for labels like "MMM yyyy", "Qn yyyy", or "yyyy"
+    private int GetLabelSortKey(string label, string timeRange)
+    {
+        var tr = (timeRange ?? "month").ToLower();
+        if (tr == "year")
+        {
+            return int.TryParse(label, out var y) ? y : int.MaxValue;
+        }
+        if (tr == "quarter")
+        {
+            try
+            {
+                // Expect format: Q1 2024
+                var parts = label.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (parts.Length == 2 && parts[0].StartsWith("Q", StringComparison.OrdinalIgnoreCase))
+                {
+                    var qStr = parts[0].Substring(1);
+                    var quarter = int.Parse(qStr);
+                    var year = int.Parse(parts[1]);
+                    return year * 10 + quarter; // ensures chronological order within year
+                }
+            }
+            catch { }
+            return int.MaxValue;
+        }
+        // Default monthly: MMM yyyy
+        try
+        {
+            if (System.DateTime.TryParseExact(label, "MMM yyyy", System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var dt))
+            {
+                return dt.Year * 100 + dt.Month; // chronological key
+            }
+        }
+        catch { }
+        return int.MaxValue;
+    }
+
+    private async Task InitializePaymentChart()
+    {
+        try
+        {
+            var paymentStats = await PaymentService.GetPaymentStatisticsAsync();
+
+            var config = new
+            {
+                type = "doughnut",
+                data = new
+                {
+                    labels = new[] { "Paid", "Pending", "Failed" },
+                    datasets = new[]
+                    {
+                        new
+                        {
+                            label = "Payments",
+                            data = new[] { paymentStats.PaidCount, paymentStats.PendingCount, paymentStats.FailedCount },
+                            backgroundColor = new[]
+                            {
+                                "rgba(16, 185, 129, 0.8)",
+                                "rgba(245, 158, 11, 0.8)",
+                                "rgba(239, 68, 68, 0.8)"
+                            },
+                            borderColor = new[]
+                            {
+                                "rgba(16, 185, 129, 1)",
+                                "rgba(245, 158, 11, 1)",
+                                "rgba(239, 68, 68, 1)"
+                            },
+                            borderWidth = 1
+                        }
+                    }
+                },
+                options = new
+                {
+                    responsive = true,
+                    maintainAspectRatio = false,
+                    plugins = new
+                    {
+                        legend = new { display = true, position = "top" }
+                    }
+                }
+            };
+
+            await JSRuntime.InvokeVoidAsync("createChart", "paymentChart", config);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Payment chart error: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeSubjectChart()
+    {
+        try
+        {
+            var topSubjects = await EnrollmentService.GetTopEnrolledSubjectsAsync(6);
+            var labels = topSubjects.Select(s => s.SubjectName).ToArray();
+            var data = topSubjects.Select(s => s.EnrollmentCount).ToArray();
+
+            var config = new
+            {
+                type = "bar",
+                data = new
+                {
+                    labels = labels,
+                    datasets = new[]
+                        {
+                            new
+                            {
+                                label = "Enrollments",
+                                data = data,
+                                backgroundColor = "rgba(139, 92, 246, 0.8)",
+                                borderColor = "rgba(139, 92, 246, 1)",
+                                borderWidth = 1
+                            }
+                        }
+                },
+                options = new
+                {
+                    responsive = true,
+                    maintainAspectRatio = false,
+                    plugins = new
+                    {
+                        legend = new { display = true, position = "top" }
+                    }
+                }
+            };
+
+            await JSRuntime.InvokeVoidAsync("createChart", "subjectChart", config);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Subject chart error: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        await JSRuntime.InvokeVoidAsync("destroyAllCharts");
+        await LoadDashboardData();
+        await InitializeCharts();
+        StateHasChanged();
+    }
+
+    private async Task ResetFilters()
+    {
+        selectedYear = DateTime.Now.Year; // Reset to current year
+        selectedMonth = 0; // Reset to "All Months"
+        selectedTimeRange = "month";
+        await ApplyFilters();
+    }
+
+    private string GetChartTitle()
+    {
+        if (selectedYear == 0)
+        {
+            return "All Years";
+        }
+
+        if (selectedMonth > 0)
+        {
+            var monthName = availableMonths.First(m => m.Value == selectedMonth).Key;
+            return $"{monthName} {selectedYear}";
+        }
+
+        return selectedTimeRange switch
+        {
+            "year" => $"{selectedYear}",
+            "quarter" => $"{selectedYear} Quarters",
+            _ => $"{selectedYear} Monthly"
+        };
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void HideLogoutConfirmation()
+    {
+        showLogoutConfirmation = false;
+        isLoggingOut = false;
+        StateHasChanged();
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            // Try to use proper logout if available
+            if (AuthStateProvider is AuthStateProvider authProvider && authProvider.GetType().GetMethod("LogoutAsync") != null)
+            {
+                await ((dynamic)AuthStateProvider).LogoutAsync();
+            }
+            else
+            {
+                AuthStateProvider.MarkUserAsLoggedOut();
+            }
+
+            Navigation.NavigateTo("/", true);
+        }
+        catch
+        {
+            // Fallback to simple logout
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+    }
+
+    private void NavigateToStudents()
+    {
+        Navigation.NavigateTo("/students");
+    }
+
+    private void NavigateToTeachers()
+    {
+        Navigation.NavigateTo("/teachers");
+    }
+
+    private void NavigateToPayments()
+    {
+        Navigation.NavigateTo("/payments");
+    }
+
+    // ✅ ADD: Dispose method for timer
+    public void Dispose()
+    {
+        syncStatusTimer?.Dispose();
+    }
+}

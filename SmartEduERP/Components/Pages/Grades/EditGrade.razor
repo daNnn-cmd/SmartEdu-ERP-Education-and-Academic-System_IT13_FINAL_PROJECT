@@ -1,0 +1,1042 @@
+﻿@page "/grades/edit/{Id:int}"
+@using SmartEduERP.Services
+@using SmartEduERP.Data.Models
+@using SmartEduERP.Components.Shared
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Teacher")]
+@inject GradeService GradeService
+@inject StudentService StudentService
+@inject SubjectService SubjectService
+@inject TeacherService TeacherService
+@inject EnrollmentService EnrollmentService
+@inject AuthStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+
+<PageTitle>Edit Grade - SmartEduERP</PageTitle>
+
+<style>
+    /* All your existing CSS styles remain the same */
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e5e5;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid #e5e5e5;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sidebar-logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .sidebar-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0;
+        color: #000;
+    }
+
+    .sidebar-subtitle {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 1rem 0;
+    }
+
+    .sidebar-section-label {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #737373;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        padding: 0 0.75rem;
+    }
+
+    .sidebar-menu-button {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        background: none;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .sidebar-menu-button:hover {
+            background: #f5f5f5;
+            color: #000;
+        }
+
+        .sidebar-menu-button.active {
+            background: #f0f0f0;
+            color: #000;
+            font-weight: 500;
+        }
+
+    .sidebar-menu-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    .user-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #000;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .user-role {
+        font-size: 0.75rem;
+        color: #737373;
+        margin: 0;
+    }
+
+    .logout-button {
+        width: 100%;
+        padding: 0.625rem;
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #404040;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .logout-button:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .main-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 1.5rem;
+    }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #000;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .dashboard-header p {
+            font-size: 0.9375rem;
+            color: #737373;
+            margin: 0;
+        }
+
+    .form-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .content-card {
+        background: white;
+        border: 1px solid #e5e5e5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .content-card-header {
+        padding: 1.25rem;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fafafa;
+    }
+
+    .content-card-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #000;
+        margin: 0;
+    }
+
+    .content-card-body {
+        padding: 1.25rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 400px;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f5f5f5;
+        border-top-color: #000;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .error-container {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #404040;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #000;
+        background: white;
+        transition: all 0.2s;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-select {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #000;
+        background: white;
+        transition: all 0.2s;
+    }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-textarea {
+        width: 100%;
+        padding: 0.625rem 0.75rem;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #000;
+        background: white;
+        transition: all 0.2s;
+        resize: vertical;
+        min-height: 80px;
+        font-family: inherit;
+    }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+        }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 2rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .btn-primary {
+        background: #000;
+        color: white;
+        border: none;
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #404040;
+        }
+
+        .btn-primary:disabled {
+            background: #a3a3a3;
+            cursor: not-allowed;
+        }
+
+    .btn-secondary {
+        background: white;
+        color: #404040;
+        border: 1px solid #e5e5e5;
+        padding: 0.625rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+        .btn-secondary:hover {
+            background: #f5f5f5;
+            border-color: #d4d4d4;
+        }
+
+    .button-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top-color: currentColor;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .error-message {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        color: #dc2626;
+        margin-top: 0.25rem;
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: #737373;
+        margin-top: 0.25rem;
+    }
+
+    .grade-preview {
+        background: #fafafa;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+        .grade-preview .grade-value {
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+        }
+
+        .grade-preview.excellent .grade-value {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .grade-preview.good .grade-value {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .grade-preview.average .grade-value {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .grade-preview.poor .grade-value {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+    .readonly-field {
+        background: #f5f5f5;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 0.625rem 0.75rem;
+        font-size: 0.875rem;
+        color: #737373;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+    }
+
+    .enrollment-info {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+        .enrollment-info h4 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #0369a1;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .enrollment-info p {
+            font-size: 0.75rem;
+            color: #0c4a6e;
+            margin: 0.25rem 0;
+        }
+
+    .success-message {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        color: #166534;
+        padding: 0.75rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        margin-bottom: 1.25rem;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-wrapper {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            position: relative;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-content {
+            margin-left: 0;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="/images/logo.png" alt="Logo" class="sidebar-logo" />
+            <div>
+                <h2 class="sidebar-title">Academic System</h2>
+                <p class="sidebar-subtitle">Education Management</p>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-section-label">Teacher Menu</div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-menu-item">
+                    <a href="/teacher-dashboard" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/grades" class="sidebar-menu-button active">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        <span>Grade Management</span>
+                    </a>
+                </li>
+                <li class="sidebar-menu-item">
+                    <a href="/teacher/schedule" class="sidebar-menu-button">
+                        <svg class="sidebar-menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        <span>Assigned Subjects</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="user-details">
+                    <p class="user-name">@userName</p>
+                    <p class="user-role">Teacher</p>
+                </div>
+            </div>
+            <button class="logout-button" @onclick="ShowLogoutConfirmation">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Log Out</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="dashboard-header">
+            <h1>Edit Grade</h1>
+            <p>Welcome back, <strong>@userName</strong>! Update grade information and performance details.</p>
+        </div>
+
+        <div class="form-container">
+            @if (loading)
+            {
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                </div>
+            }
+            else if (grade == null)
+            {
+                <div class="error-container">
+                    <h3>Grade Not Found</h3>
+                    <p>The grade you are trying to edit does not exist or you don't have permission to access it.</p>
+                    <a href="/grades" class="btn-secondary" style="margin-top: 1rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>Back to Grades</span>
+                    </a>
+                </div>
+            }
+            else
+            {
+                <div class="content-card">
+                    <div class="content-card-header">
+                        <h3 class="content-card-title">Grade Information</h3>
+                    </div>
+                    <div class="content-card-body">
+                        @if (showSuccessMessage)
+                        {
+                            <div class="success-message">
+                                Grade updated successfully! Redirecting to grades list...
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="error-message">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <!-- Enrollment Information -->
+                        @if (enrollment != null)
+                        {
+                            <div class="enrollment-info">
+                                <h4>Enrollment Information (Read Only)</h4>
+                                <p><strong>Academic Year:</strong> @enrollment.AcademicYear</p>
+                                <p><strong>Semester:</strong> @enrollment.Semester</p>
+                                <p><strong>Enrollment Date:</strong> @enrollment.EnrollmentDate.ToString("MMM dd, yyyy")</p>
+                            </div>
+                        }
+
+                        <EditForm Model="@grade" OnValidSubmit="@HandleSubmit">
+                            <DataAnnotationsValidator />
+
+                            <div class="form-group">
+                                <label class="form-label">Student</label>
+                                @if (enrollment != null)
+                                {
+                                    <div class="readonly-field">
+                                        @(grade.Student?.FirstName ?? "Unknown") @(grade.Student?.LastName ?? "Student")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <InputSelect class="form-select" @bind-Value="grade.StudentId">
+                                        <option value="">-- Select Student --</option>
+                                        @foreach (var student in students)
+                                        {
+                                            <option value="@student.StudentId">@student.FirstName @student.LastName (@student.Email)</option>
+                                        }
+                                    </InputSelect>
+                                }
+                                <ValidationMessage For="@(() => grade.StudentId)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Subject</label>
+                                @if (enrollment != null)
+                                {
+                                    <div class="readonly-field">
+                                        @(grade.Subject?.SubjectCode ?? "Unknown") - @(grade.Subject?.SubjectName ?? "Subject")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <InputSelect class="form-select" @bind-Value="grade.SubjectId">
+                                        <option value="">-- Select Subject --</option>
+                                        @foreach (var subject in subjects)
+                                        {
+                                            <option value="@subject.SubjectId">@subject.SubjectCode - @subject.SubjectName</option>
+                                        }
+                                    </InputSelect>
+                                }
+                                <ValidationMessage For="@(() => grade.SubjectId)" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Teacher</label>
+                                <div class="readonly-field">
+                                    @(grade.Teacher?.FirstName ?? "Unknown") @(grade.Teacher?.LastName ?? "Teacher")
+                                </div>
+                                <div class="help-text">Cannot be changed - assigned based on subject</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Grade Value</label>
+                                <InputNumber class="form-input" @bind-Value="grade.GradeValue" placeholder="e.g., 95.50" />
+                                <div class="help-text">Enter numeric grade value (0-100)</div>
+                                <ValidationMessage For="@(() => grade.GradeValue)" class="validation-message" />
+
+                                @if (grade.GradeValue.HasValue)
+                                {
+                                    <div class="grade-preview @GetGradePreviewClass(grade.GradeValue.Value)">
+                                        Grade Classification: <span class="grade-value">@GetGradeClassification(grade.GradeValue.Value)</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Remarks</label>
+                                <InputTextArea class="form-textarea" @bind-Value="grade.Remarks" placeholder="Optional comments about the grade..." />
+                                <div class="help-text">You can add comments or notes about this grade</div>
+                                <ValidationMessage For="@(() => grade.Remarks)" class="validation-message" />
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary" disabled="@(saving || !grade.GradeValue.HasValue)">
+                                    @if (saving)
+                                    {
+                                        <span class="button-spinner"></span>
+                                    }
+                                    <span>Update Grade</span>
+                                </button>
+                                <a href="/grades" class="btn-secondary">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                                        <polyline points="12 19 5 12 12 5"></polyline>
+                                    </svg>
+                                    <span>Cancel</span>
+                                </a>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Logout Confirmation Dialog -->
+<ConfirmationDialog IsVisible="showLogoutConfirmation"
+                    Title="Confirm Logout"
+                    Message="Are you sure you want to log out? You will need to sign in again to access your dashboard."
+                    ConfirmText="Log Out"
+                    ProcessingText="Logging out..."
+                    Type="ConfirmationDialog.ConfirmationType.Logout"
+                    IsProcessing="isLoggingOut"
+                    OnConfirm="ConfirmLogout"
+                    OnCancel="CancelLogout" />
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Grade? grade;
+    private Enrollment? enrollment;
+    private List<Student> students = new List<Student>();
+    private List<Subject> subjects = new List<Subject>();
+    private List<Teacher> teachers = new List<Teacher>();
+    private string errorMessage = string.Empty;
+    private bool loading = true;
+    private bool saving = false;
+    private bool showSuccessMessage = false;
+    private string userName = "";
+    private int teacherId = 0;
+
+    // Logout confirmation
+    private bool showLogoutConfirmation = false;
+    private bool isLoggingOut = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get user info from authentication state
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                // Get full name from claims
+                userName = user.FindFirst(ClaimTypes.GivenName)?.Value + " " + user.FindFirst(ClaimTypes.Surname)?.Value;
+                if (string.IsNullOrWhiteSpace(userName))
+                    userName = user.Identity.Name ?? "Teacher";
+
+                // Get teacher ID from user account
+                var userId = AuthStateProvider.GetCurrentUserId();
+                if (userId.HasValue)
+                {
+                    await LoadTeacherIdFromUserAccount(userId.Value);
+
+                    // Load data
+                    await LoadData();
+
+                    // Load the grade to edit
+                    grade = await GradeService.GetGradeByIdAsync(Id);
+
+                    // Ensure the logged-in teacher owns this grade
+                    if (grade != null && grade.TeacherId != teacherId)
+                    {
+                        errorMessage = "You do not have permission to edit this grade.";
+                        grade = null;
+                        return;
+                    }
+
+                    if (grade != null)
+                    {
+                        // Load the enrollment for this grade
+                        if (grade.EnrollmentId > 0)
+                        {
+                            enrollment = await EnrollmentService.GetEnrollmentByIdAsync(grade.EnrollmentId);
+                        }
+
+                        // Filter subjects to only those taught by the teacher of this grade
+                        var teacherSubjects = await SubjectService.GetSubjectsByTeacherIdAsync(grade.TeacherId);
+                        if (teacherSubjects.Any())
+                        {
+                            subjects = teacherSubjects;
+                        }
+
+                        // Filter students to only include students enrolled in the subject
+                        if (grade.SubjectId > 0)
+                        {
+                            var enrollments = await EnrollmentService.GetEnrollmentsBySubjectAsync(grade.SubjectId);
+                            var enrolledStudentIds = enrollments.Select(e => e.StudentId).ToList();
+                            students = students.Where(s => enrolledStudentIds.Contains(s.StudentId)).ToList();
+                        }
+                    }
+                }
+                else
+                {
+                    errorMessage = "Authentication error. Please log in again.";
+                }
+            }
+            else
+            {
+                errorMessage = "Please log in to access grade management.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error initializing page: {ex.Message}";
+            Console.WriteLine($"❌ Error in OnInitializedAsync: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadTeacherIdFromUserAccount(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && userAccount.ReferenceId.HasValue)
+            {
+                teacherId = userAccount.ReferenceId.Value;
+            }
+            else
+            {
+                // Fallback: try to find teacher by email
+                await FindTeacherByEmail(userId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error loading teacher ID: {ex.Message}");
+        }
+    }
+
+    private async Task FindTeacherByEmail(int userId)
+    {
+        try
+        {
+            var userAccount = await AuthService.GetUserByIdAsync(userId);
+            if (userAccount != null && !string.IsNullOrEmpty(userAccount.Email))
+            {
+                var teachersList = await TeacherService.GetAllTeachersAsync();
+                var matchingTeacher = teachersList.FirstOrDefault(t =>
+                    t.Email?.ToLower() == userAccount.Email.ToLower());
+
+                if (matchingTeacher != null)
+                {
+                    teacherId = matchingTeacher.TeacherId;
+                    // Update user account with ReferenceId
+                    userAccount.ReferenceId = teacherId;
+                    await AuthService.UpdateUserAsync(userAccount);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error finding teacher by email: {ex.Message}");
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            // Load students - only current students for this teacher if teacherId is set
+            if (teacherId > 0)
+            {
+                students = await EnrollmentService.GetCurrentStudentsForTeacherAsync(teacherId);
+            }
+            else
+            {
+                students = await StudentService.GetAllStudentsAsync();
+            }
+
+            // Load subjects - only for the current teacher if teacherId is set
+            if (teacherId > 0)
+            {
+                subjects = await SubjectService.GetSubjectsByTeacherIdAsync(teacherId);
+            }
+            else
+            {
+                subjects = await SubjectService.GetAllSubjectsAsync();
+            }
+
+            // Load all teachers (for readonly display / existing UI expectations)
+            teachers = await TeacherService.GetAllTeachersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+            Console.WriteLine($"❌ Error loading data: {ex.Message}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (grade == null) return;
+
+        saving = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            // Validate grade value
+            if (!grade.GradeValue.HasValue)
+            {
+                errorMessage = "Please enter a grade value.";
+                saving = false;
+                StateHasChanged();
+                return;
+            }
+
+            if (grade.GradeValue.Value < 0 || grade.GradeValue.Value > 100)
+            {
+                errorMessage = "Grade value must be between 0 and 100.";
+                saving = false;
+                StateHasChanged();
+                return;
+            }
+
+            // Update the UpdatedAt timestamp
+            grade.UpdatedAt = DateTime.UtcNow;
+
+            await GradeService.UpdateGradeAsync(grade);
+
+            // Show success message
+            showSuccessMessage = true;
+            saving = false;
+            StateHasChanged();
+
+            // Wait for 2 seconds and then navigate
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/grades");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating grade: {ex.Message}";
+            saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetGradePreviewClass(decimal gradeValue)
+    {
+        return gradeValue >= 90 ? "excellent" :
+               gradeValue >= 80 ? "good" :
+               gradeValue >= 75 ? "average" :
+               "poor";
+    }
+
+    private string GetGradeClassification(decimal gradeValue)
+    {
+        return gradeValue >= 90 ? "Excellent (90-100)" :
+               gradeValue >= 80 ? "Good (80-89)" :
+               gradeValue >= 75 ? "Average (75-79)" :
+               "Poor (Below 75)";
+    }
+
+    private void ShowLogoutConfirmation()
+    {
+        showLogoutConfirmation = true;
+    }
+
+    private async Task ConfirmLogout()
+    {
+        isLoggingOut = true;
+        StateHasChanged();
+
+        try
+        {
+            await AuthStateProvider.LogoutAsync();
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during logout: {ex.Message}");
+            AuthStateProvider.MarkUserAsLoggedOut();
+            Navigation.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+            showLogoutConfirmation = false;
+        }
+    }
+
+    private void CancelLogout()
+    {
+        showLogoutConfirmation = false;
+    }
+}
