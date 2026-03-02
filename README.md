@@ -62,6 +62,30 @@ Update `SmartEduERP/appsettings.json`:
 
 > Security note: Do not commit real production credentials. Prefer user-secrets or environment variables for sensitive values.
 
+## Database Credentials (Template)
+
+This project uses EF Core connection strings from `SmartEduERP/appsettings.json`.
+
+- `ConnectionStrings:DefaultConnection` (local SQL Server)
+- `ConnectionStrings:CloudConnection` (optional cloud SQL Server)
+
+Example (placeholders only):
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=SmartEduERP;User Id=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;TrustServerCertificate=True;",
+    "CloudConnection": "Server=YOUR_CLOUD_SERVER;Database=SmartEduERP;User Id=YOUR_CLOUD_USER;Password=YOUR_CLOUD_PASSWORD;TrustServerCertificate=True;"
+  }
+}
+```
+
+Do not commit real credentials to GitHub. Store them locally using one of these approaches:
+
+- **User secrets** (recommended for development)
+- **Environment variables**
+- A local-only `appsettings.Development.json` (ensure it is ignored by git)
+
 ### 3) Restore + Build
 
 ```bash
