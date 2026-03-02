@@ -32,6 +32,22 @@ public class SubjectService
             .ToListAsync();
     }
 
+    public async Task<List<Subject>> GetAllSubjectsIncludingArchivedAsync()
+    {
+        return await _context.Subjects
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(s => s.Teacher)
+            .Include(s => s.ProposedByUser)
+            .Include(s => s.NotedByUser)
+            .Include(s => s.ApprovedByUser)
+            .OrderBy(s => s.IsDeleted)
+            .ThenBy(s => s.GradeLevel)
+            .ThenBy(s => s.Section)
+            .ThenBy(s => s.SubjectCode)
+            .ToListAsync();
+    }
+
     public async Task<Subject?> GetSubjectByIdAsync(int id)
     {
         return await _context.Subjects

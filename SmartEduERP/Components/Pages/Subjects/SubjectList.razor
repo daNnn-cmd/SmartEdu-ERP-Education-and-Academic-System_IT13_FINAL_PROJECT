@@ -284,6 +284,20 @@
         background: white;
     }
 
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: #404040;
+        white-space: nowrap;
+    }
+
+    .toggle-container input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+
         .search-input:focus, .filter-select:focus, .page-size-select:focus {
             outline: none;
             border-color: #000;
@@ -940,6 +954,11 @@
                                @bind:event="oninput"
                                @onkeyup="HandleSearch" />
 
+                        <label class="toggle-container">
+                            <input type="checkbox" @bind="includeArchived" @bind:after="OnIncludeArchivedChanged" />
+                            <span>Show archived</span>
+                        </label>
+
                         <select class="filter-select" @bind="gradeLevelFilter" @bind:after="ApplyFilters">
                             <option value="">All Grades</option>
                             <option value="Grade 11">Grade 11</option>
@@ -1028,7 +1047,11 @@
                                             <td>@subject.Section</td>
                                             <td>@subject.AcademicYear</td>
                                             <td>
-                                                @if (!string.IsNullOrWhiteSpace(subject.SubjectStatus))
+                                                @if (subject.IsDeleted)
+                                                {
+                                                    <span>Archived</span>
+                                                }
+                                                else if (!string.IsNullOrWhiteSpace(subject.SubjectStatus))
                                                 {
                                                     <span>@subject.SubjectStatus</span>
                                                 }
@@ -1038,7 +1061,11 @@
                                                 }
                                             </td>
                                             <td>
-                                                @if (subject.ProposedByUser != null)
+                                                @if (!string.IsNullOrWhiteSpace(subject.ProposedBy))
+                                                {
+                                                    <span>@subject.ProposedBy</span>
+                                                }
+                                                else if (subject.ProposedByUser != null)
                                                 {
                                                     <span>@subject.ProposedByUser.FirstName @subject.ProposedByUser.LastName</span>
                                                 }
@@ -1090,25 +1117,28 @@
                                             </td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <a href="/subjects/edit/@subject.SubjectId" class="action-button edit">
-                                                        Edit
-                                                    </a>
-                                                    @if (isAdmin && string.Equals(subject.SubjectStatus, "Proposed", StringComparison.OrdinalIgnoreCase))
+                                                    @if (!subject.IsDeleted)
                                                     {
-                                                        <button class="action-button note" @onclick="() => ShowNoteModal(subject.SubjectId)">
-                                                            Note
+                                                        <a href="/subjects/edit/@subject.SubjectId" class="action-button edit">
+                                                            Edit
+                                                        </a>
+                                                        @if (isAdmin && string.Equals(subject.SubjectStatus, "Proposed", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            <button class="action-button note" @onclick="() => ShowNoteModal(subject.SubjectId)">
+                                                                Note
+                                                            </button>
+                                                        }
+                                                        @if (isAdmin && string.Equals(subject.SubjectStatus, "Noted", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            <button class="action-button approve" @onclick="() => ShowApproveModal(subject.SubjectId)">
+                                                                Approve
+                                                            </button>
+                                                        }
+                                                        <button class="action-button archive"
+                                                                @onclick="() => ShowArchiveConfirmation(subject.SubjectId, subject.SubjectName)">
+                                                            Archive
                                                         </button>
                                                     }
-                                                    @if (isAdmin && string.Equals(subject.SubjectStatus, "Noted", StringComparison.OrdinalIgnoreCase))
-                                                    {
-                                                        <button class="action-button approve" @onclick="() => ShowApproveModal(subject.SubjectId)">
-                                                            Approve
-                                                        </button>
-                                                    }
-                                                    <button class="action-button archive"
-                                                            @onclick="() => ShowArchiveConfirmation(subject.SubjectId, subject.SubjectName)">
-                                                        Archive
-                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1257,6 +1287,8 @@
     private string userName = "";
     private bool isAdmin = false;
 
+    private bool includeArchived = false;
+
     private List<string> academicYears = new();
 
     // Archive confirmation
@@ -1312,7 +1344,9 @@
         loading = true;
         StateHasChanged();
 
-        subjects = await SubjectService.GetAllSubjectsAsync();
+        subjects = includeArchived
+            ? await SubjectService.GetAllSubjectsIncludingArchivedAsync()
+            : await SubjectService.GetAllSubjectsAsync();
 
         if (!autoArchiveChecked)
         {
@@ -1356,6 +1390,12 @@
         ApplyFiltersAndSort();
         loading = false;
         StateHasChanged();
+    }
+
+    private async Task OnIncludeArchivedChanged()
+    {
+        currentPage = 1;
+        await LoadSubjects();
     }
 
     private static bool IsSchoolYearDone(string academicYear, int currentYear)
@@ -1707,7 +1747,9 @@
 
         try
         {
-            var all = await SubjectService.GetAllSubjectsAsync();
+            var all = includeArchived
+                ? await SubjectService.GetAllSubjectsIncludingArchivedAsync()
+                : await SubjectService.GetAllSubjectsAsync();
             var bytes = ExportService.ExportSubjectsToExcel(all);
             await JS.InvokeVoidAsync("downloadFile", $"Subjects_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx", Convert.ToBase64String(bytes), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             ToastService.ShowSuccess("Excel export completed successfully.");
@@ -1730,7 +1772,9 @@
 
         try
         {
-            var all = await SubjectService.GetAllSubjectsAsync();
+            var all = includeArchived
+                ? await SubjectService.GetAllSubjectsIncludingArchivedAsync()
+                : await SubjectService.GetAllSubjectsAsync();
             var bytes = ExportService.ExportSubjectsToPDF(all);
             await JS.InvokeVoidAsync("downloadFile", $"Subjects_{DateTime.Now:yyyyMMdd_HHmmss}.pdf", Convert.ToBase64String(bytes), "application/pdf");
             ToastService.ShowSuccess("PDF export completed successfully.");

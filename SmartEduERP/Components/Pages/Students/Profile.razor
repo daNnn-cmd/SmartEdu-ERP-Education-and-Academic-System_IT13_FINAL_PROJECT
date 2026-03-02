@@ -6,6 +6,9 @@
 
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject StudentService StudentService
+@inject EnrollmentService EnrollmentService
+@inject GradeService GradeService
+@inject PaymentService PaymentService
 @inject AuthStateProvider AuthStateProvider
 @inject AuthService AuthService
 @inject NavigationManager Navigation
@@ -728,11 +731,17 @@
     {
         student = await StudentService.GetStudentByIdAsync(studentId);
 
-        // In a real application, you would fetch these counts from respective services
-        // For now, we'll set some placeholder values
-        enrollmentCount = 5; // This would come from EnrollmentService
-        gradeCount = 12; // This would come from GradeService
-        completedPayments = 3; // This would come from PaymentService
+        var enrollments = await EnrollmentService.GetEnrollmentsByStudentAsync(studentId);
+        enrollmentCount = enrollments.Count(e => !e.IsDeleted);
+
+        var grades = await GradeService.GetGradesByStudentAsync(studentId);
+        gradeCount = grades.Count(g => !g.IsDeleted);
+
+        var payments = await PaymentService.GetPaymentsByStudentAsync(studentId);
+        completedPayments = payments.Count(p =>
+            !p.IsDeleted &&
+            !string.IsNullOrWhiteSpace(p.PaymentStatus) &&
+            p.PaymentStatus.Trim().ToLower() == "paid");
     }
 
     private string GetStatusClass(string? status)

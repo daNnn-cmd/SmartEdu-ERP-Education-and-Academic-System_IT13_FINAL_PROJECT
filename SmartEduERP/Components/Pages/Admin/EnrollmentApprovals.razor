@@ -239,6 +239,15 @@
         align-items: center;
     }
 
+    .toggle-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: #404040;
+    }
+
     .search-input,
     .filter-select,
     .page-size-select {
@@ -817,6 +826,10 @@
             <div class="content-card">
                 <div class="content-card-header">
                     <h3 class="content-card-title">Enrollments</h3>
+                    <label class="toggle-container">
+                        <input type="checkbox" @bind="includeArchived" @bind:after="OnIncludeArchivedChanged" />
+                        <span>Show archived</span>
+                    </label>
                     <div class="filters-grid">
                         <input type="text" class="search-input" placeholder="Search student or subject..." @bind="searchTerm"
                                @bind:event="oninput" @onkeyup="HandleSearch" />
@@ -867,18 +880,26 @@
                                 <tbody>
                                     @foreach (var enrollment in pagedEnrollments)
                                     {
+                                        var isArchived = enrollment.IsDeleted;
                                         <tr>
                                             <td>@(enrollment.Student != null ? $"{enrollment.Student.FirstName} {enrollment.Student.LastName}" : "-")</td>
                                             <td>@(enrollment.Subject != null ? $"{enrollment.Subject.SubjectCode} - {enrollment.Subject.SubjectName}" : "-")</td>
                                             <td>@enrollment.AcademicYear</td>
                                             <td>@enrollment.Semester</td>
                                             <td>
-                                                <span class="enrollment-status @GetEnrollmentStatusClass(enrollment.EnrollmentStatus)">@GetEnrollmentStatusText(enrollment.EnrollmentStatus)</span>
+                                                @if (isArchived)
+                                                {
+                                                    <span class="enrollment-status rejected">Archived</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="enrollment-status @GetEnrollmentStatusClass(enrollment.EnrollmentStatus)">@GetEnrollmentStatusText(enrollment.EnrollmentStatus)</span>
+                                                }
                                             </td>
                                             <td>@enrollment.CreatedAt.ToString("MMM dd, yyyy")</td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    @if (IsPending(enrollment.EnrollmentStatus))
+                                                    @if (!isArchived && IsPending(enrollment.EnrollmentStatus))
                                                     {
                                                         <button class="action-button approve" @onclick="() => ShowApproveModal(enrollment.EnrollmentId)">Approve</button>
                                                         <button class="action-button reject" @onclick="() => ShowRejectModal(enrollment.EnrollmentId)">Reject</button>
@@ -1036,6 +1057,8 @@
 @code {
     private bool isAdmin = false;
     private bool loading = true;
+
+    private bool includeArchived = false;
 
     private string userName = "Admin";
 
@@ -1282,7 +1305,9 @@
             return;
         }
 
-        var all = await EnrollmentService.GetAllEnrollmentsAsync();
+        var all = includeArchived
+            ? await EnrollmentService.GetAllEnrollmentsIncludingArchivedAsync()
+            : await EnrollmentService.GetAllEnrollmentsAsync();
         enrollments = all
             .OrderByDescending(e => e.CreatedAt)
             .ToList();
@@ -1291,6 +1316,11 @@
 
         loading = false;
         StateHasChanged();
+    }
+
+    private async Task OnIncludeArchivedChanged()
+    {
+        await LoadEnrollments();
     }
 
     private async Task Reload()
