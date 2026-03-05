@@ -18,6 +18,17 @@
             </div>
         </div>
 
+        @if (!string.IsNullOrWhiteSpace(syncMessage))
+        {
+            <div class="sync-status @syncStatusClass">
+                <span>@syncMessage</span>
+                @if (isSyncing)
+                {
+                    <div class="sync-spinner"></div>
+                }
+            </div>
+        }
+
         <div class="sidebar-content">
             <div class="sidebar-section-label">HR Menu</div>
             <ul class="sidebar-menu">

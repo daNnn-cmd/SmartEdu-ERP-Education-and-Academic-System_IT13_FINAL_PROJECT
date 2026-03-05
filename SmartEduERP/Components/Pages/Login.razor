@@ -3,6 +3,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @using SmartEduERP.Services
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Timers
 @inject AuthService AuthService
 @inject AuthStateProvider AuthStateProvider
 @inject NavigationManager Navigation
@@ -328,14 +329,14 @@
                     }
                 </div>
 
-                <button type="submit" class="btn-signin" disabled="@isLoading">
+                <button type="submit" class="btn-signin" disabled="@(isLoading || IsLockedOut)">
                     @if (isLoading)
                     {
                         <span>Logging in...</span>
                     }
                     else
                     {
-                        <span>Log In</span>
+                        <span>@(IsLockedOut ? GetLockButtonText() : "Log In")</span>
                     }
                 </button>
             </EditForm>
@@ -354,6 +355,13 @@
     private bool showPasswordErrorBorder = false;
     private const string InvalidCredentialsMessage = "Invalid username/email or password.";
     private const string EmptyFieldsMessage = "Please enter your username and password.";
+    private const int MaxFailedAttempts = 5;
+    private static readonly TimeSpan LockoutDuration = TimeSpan.FromSeconds(30);
+
+    private readonly Dictionary<string, (int FailedCount, DateTimeOffset? LockedUntil)> _attemptsByKey = new();
+    private Timer? _lockoutTimer;
+
+    private bool IsLockedOut => GetCurrentLockoutRemaining() > TimeSpan.Zero;
 
     private string GetUsernameInputClass()
     {
@@ -377,6 +385,12 @@
 
     private async Task HandleLogin()
     {
+        if (IsLockedOut)
+        {
+            errorMessage = BuildLockoutMessage();
+            return;
+        }
+
         isLoading = true;
         errorMessage = null;
         showUsernameErrorBorder = false;
@@ -388,6 +402,8 @@
 
             if (user != null)
             {
+                ResetAttempts(GetAttemptKey(loginModel.Username));
+
                 AuthStateProvider.MarkUserAsAuthenticated(
                     user.UserId,
                     user.Username,
@@ -411,7 +427,9 @@
             }
             else
             {
-                errorMessage = InvalidCredentialsMessage;
+                RegisterFailedAttempt(GetAttemptKey(loginModel.Username));
+
+                errorMessage = IsLockedOut ? BuildLockoutMessage() : BuildInvalidCredentialsWithAttemptsLeftMessage();
                 showUsernameErrorBorder = true;
                 showPasswordErrorBorder = true;
             }
@@ -424,6 +442,33 @@
         {
             isLoading = false;
         }
+    }
+
+    private string BuildInvalidCredentialsWithAttemptsLeftMessage()
+    {
+        var key = GetAttemptKey(loginModel.Username);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            key = "_empty_";
+        }
+
+        if (!_attemptsByKey.TryGetValue(key, out var entry))
+        {
+            return InvalidCredentialsMessage;
+        }
+
+        if (entry.LockedUntil.HasValue && entry.LockedUntil.Value > DateTimeOffset.UtcNow)
+        {
+            return BuildLockoutMessage();
+        }
+
+        var attemptsLeft = MaxFailedAttempts - entry.FailedCount;
+        if (attemptsLeft < 0)
+        {
+            attemptsLeft = 0;
+        }
+
+        return $"{InvalidCredentialsMessage} Attempts left: {attemptsLeft}.";
     }
 
     private void HandleInvalidSubmit(EditContext editContext)
@@ -448,6 +493,11 @@
         {
             errorMessage = null;
         }
+
+        if (IsLockedOut)
+        {
+            errorMessage = BuildLockoutMessage();
+        }
     }
 
     private void HandlePasswordInput(ChangeEventArgs _)
@@ -460,6 +510,169 @@
         if (errorMessage == InvalidCredentialsMessage || errorMessage == EmptyFieldsMessage)
         {
             errorMessage = null;
+        }
+
+        if (IsLockedOut)
+        {
+            errorMessage = BuildLockoutMessage();
+        }
+    }
+
+    private string GetAttemptKey(string usernameOrEmail)
+    {
+        return (usernameOrEmail ?? string.Empty).Trim().ToLowerInvariant();
+    }
+
+    private void RegisterFailedAttempt(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            key = "_empty_";
+        }
+
+        if (!_attemptsByKey.TryGetValue(key, out var entry))
+        {
+            entry = (0, null);
+        }
+
+        if (entry.LockedUntil.HasValue && entry.LockedUntil.Value > DateTimeOffset.UtcNow)
+        {
+            EnsureLockoutTimer();
+            return;
+        }
+
+        var newFailed = entry.FailedCount + 1;
+        DateTimeOffset? lockedUntil = entry.LockedUntil;
+
+        if (newFailed >= MaxFailedAttempts)
+        {
+            lockedUntil = DateTimeOffset.UtcNow.Add(LockoutDuration);
+            newFailed = 0;
+            EnsureLockoutTimer();
+        }
+
+        _attemptsByKey[key] = (newFailed, lockedUntil);
+    }
+
+    private void ResetAttempts(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            key = "_empty_";
+        }
+
+        if (_attemptsByKey.ContainsKey(key))
+        {
+            _attemptsByKey.Remove(key);
+        }
+
+        StopLockoutTimerIfIdle();
+    }
+
+    private TimeSpan GetCurrentLockoutRemaining()
+    {
+        var key = GetAttemptKey(loginModel.Username);
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            key = "_empty_";
+        }
+
+        if (!_attemptsByKey.TryGetValue(key, out var entry))
+        {
+            return TimeSpan.Zero;
+        }
+
+        if (!entry.LockedUntil.HasValue)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var remaining = entry.LockedUntil.Value - DateTimeOffset.UtcNow;
+        return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
+    }
+
+    private string BuildLockoutMessage()
+    {
+        var remaining = GetCurrentLockoutRemaining();
+        if (remaining <= TimeSpan.Zero)
+        {
+            return InvalidCredentialsMessage;
+        }
+
+        var secondsRemaining = (int)Math.Ceiling(remaining.TotalSeconds);
+        if (secondsRemaining < 1)
+        {
+            secondsRemaining = 1;
+        }
+
+        return $"Too many attempts. Try again in {secondsRemaining} second(s).";
+    }
+
+    private string GetLockButtonText()
+    {
+        var remaining = GetCurrentLockoutRemaining();
+        var secondsRemaining = (int)Math.Ceiling(remaining.TotalSeconds);
+        if (secondsRemaining < 1)
+        {
+            secondsRemaining = 1;
+        }
+
+        return $"Locked ({secondsRemaining}s)";
+    }
+
+    private void EnsureLockoutTimer()
+    {
+        if (_lockoutTimer != null)
+        {
+            return;
+        }
+
+        _lockoutTimer = new Timer(1000);
+        _lockoutTimer.AutoReset = true;
+        _lockoutTimer.Elapsed += (_, _) => InvokeAsync(() =>
+        {
+            if (IsLockedOut)
+            {
+                errorMessage = BuildLockoutMessage();
+            }
+            else
+            {
+                StopLockoutTimerIfIdle();
+                if (errorMessage != null && errorMessage.StartsWith("Too many attempts.", StringComparison.OrdinalIgnoreCase))
+                {
+                    errorMessage = null;
+                }
+            }
+
+            StateHasChanged();
+        });
+        _lockoutTimer.Start();
+    }
+
+    private void StopLockoutTimerIfIdle()
+    {
+        if (_lockoutTimer == null)
+        {
+            return;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var anyLocked = _attemptsByKey.Values.Any(v => v.LockedUntil.HasValue && v.LockedUntil.Value > now);
+        if (!anyLocked)
+        {
+            _lockoutTimer.Stop();
+            _lockoutTimer.Dispose();
+            _lockoutTimer = null;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_lockoutTimer != null)
+        {
+            _lockoutTimer.Stop();
+            _lockoutTimer.Dispose();
+            _lockoutTimer = null;
         }
     }
 

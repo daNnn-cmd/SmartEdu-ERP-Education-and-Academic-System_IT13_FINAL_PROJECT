@@ -833,7 +833,6 @@
                                 <option value="">-- Select Role --</option>
                                 <option value="Admin">Admin - Full system access</option>
                                 <option value="Teacher">Teacher - Manage grades & students</option>
-                                <option value="Student">Student - View grades & enrollments</option>
                                 <option value="HR">HR - Human Resources</option>
                                 <option value="Accounting">Accounting - Teacher Income</option>
                             </InputSelect>
@@ -1123,7 +1122,7 @@
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please select a role")]
         [System.ComponentModel.DataAnnotations.MaxLength(50, ErrorMessage = "Role cannot exceed 50 characters")]
-        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(Admin|Teacher|Student|HR|Accounting)$", ErrorMessage = "Invalid role selected.")]
+        [System.ComponentModel.DataAnnotations.RegularExpression(@"^(Admin|Teacher|HR|Accounting)$", ErrorMessage = "Invalid role selected.")]
         public string Role { get; set; } = "";
 
         public bool IsEmailConfirmed { get; set; } = false;
